@@ -210,7 +210,8 @@ input:focus, select:focus, textarea:focus { outline: none; }
   transition: transform 0.15s;
 }
 .pay-btn:active { transform: scale(0.95); }
-.pay-btn.unpaid { background: var(--surface-2); color: var(--text-dim); }
+.pay-btn.unpaid { background: var(--warning); color: #0a0e1a; }
+.pay-btn.unpaid:hover { background: var(--danger); color: white; }
 
 /* === ACCOUNTS === */
 .account-grid { display: grid; gap: 10px; }
@@ -348,12 +349,12 @@ input:focus, select:focus, textarea:focus { outline: none; }
 /* === MONTH SELECTOR === */
 .month-selector { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
 .month-selector::-webkit-scrollbar { display: none; }
-.month-pill { padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; white-space: nowrap; font-size: 13px; font-weight: 500; flex-shrink: 0; transition: all 0.15s; text-align: center; color: var(--text); }
+.month-pill { padding: 10px 16px; background: var(--surface); border: 2px solid var(--border); border-radius: 12px; white-space: nowrap; font-size: 13px; font-weight: 500; flex-shrink: 0; transition: all 0.15s; text-align: center; color: var(--text); }
 .month-pill .label { display: block; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
 .month-pill .amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; margin-top: 2px; color: var(--text); }
-.month-pill.active { background: var(--accent); border-color: var(--accent); color: #0a0e1a; box-shadow: 0 4px 14px rgba(245,158,11,0.4); }
-.month-pill.active .label { color: #0a0e1a !important; opacity: 0.75; font-weight: 700; }
-.month-pill.active .amount { color: #0a0e1a !important; font-weight: 700; }
+.month-pill.active { background: var(--surface-2); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245,158,11,0.2), 0 4px 14px rgba(245,158,11,0.3); }
+.month-pill.active .label { color: var(--accent); font-weight: 700; }
+.month-pill.active .amount { color: var(--text); font-weight: 700; }
 .month-pill.future { background: var(--bg-2); }
 
 /* === EMPTY === */
@@ -637,6 +638,14 @@ input:focus, select:focus, textarea:focus { outline: none; }
               <button class="btn btn-secondary" style="flex:1;" id="exportBtn">⬇ İndir</button>
               <button class="btn btn-secondary" style="flex:1;" id="importBtn">⬆ Yükle</button>
             </div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:14px;">
+          <div class="section-body" style="padding-top:16px;">
+            <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px;">🧹 Ödeme Kayıtlarını Temizle</h3>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Yanlış "Ödendi" olarak işaretlediysen tüm ödeme kayıtlarını temizleyebilirsin. Hesap bakiyelerine geri eklenir.</p>
+            <button class="btn btn-secondary btn-block" onclick="resetAllPayments()">⚠️ Tüm Ödeme Kayıtlarını Sıfırla</button>
           </div>
         </div>
 
@@ -2268,6 +2277,22 @@ function logoutDevice() {
   location.reload();
 }
 window.logoutDevice = logoutDevice;
+
+async function resetAllPayments() {
+  if (state.payments.length === 0) { showToast('Zaten ödeme kaydı yok', 'success'); return; }
+  if (!confirm(`${state.payments.length} ödeme kaydı silinecek. Hesap bakiyelerine geri eklenecek. Emin misin?`)) return;
+  
+  // Tüm ödemeleri geri al ve hesap bakiyelerini düzelt
+  state.payments.forEach(p => {
+    const account = state.accounts.find(a => a.id === p.accountId);
+    if (account) account.balance += p.amount;
+  });
+  state.payments = [];
+  await saveState();
+  renderAll();
+  showToast('🧹 Tüm ödeme kayıtları temizlendi', 'success');
+}
+window.resetAllPayments = resetAllPayments;
 
 let toastTimer = null;
 function showToast(msg, type = '') {
