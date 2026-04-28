@@ -8,6 +8,32 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Fraunces:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyCyAnpELLloyLp2wut6DPoI76xQTtesxAc",
+    authDomain: "kart-takip-a69f7.firebaseapp.com",
+    projectId: "kart-takip-a69f7",
+    storageBucket: "kart-takip-a69f7.firebasestorage.app",
+    messagingSenderId: "864294416967",
+    appId: "1:864294416967:web:4d06f9696bc13f836af762"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  
+  window.fbDb = db;
+  window.fbDoc = doc;
+  window.fbSetDoc = setDoc;
+  window.fbGetDoc = getDoc;
+  window.fbOnSnapshot = onSnapshot;
+  window.firebaseReady = true;
+  
+  // Firebase yüklendiğinde haber ver
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
 <style>
 :root {
   --bg: #0a0e1a;
@@ -140,6 +166,31 @@ input:focus, select:focus, textarea:focus { outline: none; }
   line-height: 1.6;
 }
 
+/* === SYNC INDICATOR === */
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-2);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+.sync-status.syncing { color: var(--primary); }
+.sync-status.synced { color: var(--success); border-color: rgba(52,211,153,0.3); }
+.sync-status.error { color: var(--danger); border-color: rgba(248,113,113,0.3); }
+.sync-status .dot-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.sync-status.syncing .dot-icon { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* === APP === */
 .app { display: none; min-height: 100vh; padding-bottom: 100px; }
 .app.active { display: block; }
@@ -160,6 +211,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
   justify-content: space-between;
   max-width: 1200px;
   margin: 0 auto;
+  gap: 12px;
 }
 .header-title {
   font-family: 'Fraunces', serif;
@@ -170,17 +222,8 @@ input:focus, select:focus, textarea:focus { outline: none; }
   align-items: center;
   gap: 10px;
 }
-.header-title .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 10px var(--success);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-.header-actions { display: flex; gap: 8px; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
 .icon-btn {
   width: 40px;
   height: 40px;
@@ -293,7 +336,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .section-body { padding: 0 18px 18px; }
 .section-body.no-pad { padding: 0; }
 
-/* === PAYMENT SCHEDULE === */
+/* === PAYMENT === */
 .payment-list { display: flex; flex-direction: column; gap: 8px; }
 .payment-item {
   display: grid;
@@ -331,7 +374,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .payment-amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; text-align: right; }
 .payment-amount .days { font-size: 10px; color: var(--text-mute); display: block; margin-top: 2px; font-family: 'Manrope'; }
 
-/* === EXPENSE LIST === */
+/* === EXPENSES === */
 .expense-list { display: flex; flex-direction: column; }
 .expense-item {
   display: flex;
@@ -362,7 +405,6 @@ input:focus, select:focus, textarea:focus { outline: none; }
 
 /* === CATEGORY BARS === */
 .cat-list { display: flex; flex-direction: column; gap: 12px; }
-.cat-item {}
 .cat-row { display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline; }
 .cat-name { font-size: 13px; font-weight: 500; }
 .cat-amount { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
@@ -528,7 +570,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 }
 .chip.active { background: var(--accent); color: #0a0e1a; border-color: var(--accent); font-weight: 600; }
 
-/* === CARD MGMT === */
+/* === MGMT === */
 .mgmt-card {
   background: var(--bg-2);
   border-radius: 14px;
@@ -555,9 +597,8 @@ input:focus, select:focus, textarea:focus { outline: none; }
   font-size: 14px;
 }
 .mgmt-detail { display: flex; gap: 16px; font-size: 12px; color: var(--text-dim); }
-.mgmt-detail span { display: flex; align-items: center; gap: 4px; }
 
-/* === CHART CONTAINER === */
+/* === CHART === */
 .chart-wrap {
   height: 240px;
   padding: 8px;
@@ -593,7 +634,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .month-pill.active .label { color: #0a0e1a; opacity: 0.7; }
 .month-pill.future { background: var(--bg-2); }
 
-/* === EMPTY STATE === */
+/* === EMPTY === */
 .empty {
   text-align: center;
   padding: 40px 20px;
@@ -640,21 +681,6 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .toast.success { border-color: var(--success); }
 .toast.error { border-color: var(--danger); }
 
-/* === DETAILS DROPDOWN === */
-.details-toggle {
-  background: var(--bg-2);
-  padding: 12px 16px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text-dim);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.details-content { display: none; padding: 12px 0 0; }
-.details-content.show { display: block; }
-
 /* === MGMT TABS === */
 .mgmt-tabs {
   display: flex;
@@ -675,6 +701,29 @@ input:focus, select:focus, textarea:focus { outline: none; }
   transition: all 0.2s;
 }
 .mgmt-tab.active { background: var(--accent); color: #0a0e1a; }
+
+/* === CLOUD ID DISPLAY === */
+.cloud-id-box {
+  background: rgba(96,165,250,0.1);
+  border: 1px solid rgba(96,165,250,0.3);
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.cloud-id-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.cloud-id-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  word-break: break-all;
+  color: var(--primary);
+}
 </style>
 </head>
 <body>
@@ -685,15 +734,19 @@ input:focus, select:focus, textarea:focus { outline: none; }
     <div class="login-logo">💳</div>
     <h1 class="login-title" id="loginTitle">Hoş Geldin</h1>
     <p class="login-subtitle" id="loginSubtitle">Şifreni girerek devam et</p>
+    
+    <input type="text" class="login-input" id="cloudIdInput" placeholder="Bulut ID (yeni kullanıcılar boş bırakın)" autocomplete="off" style="display:none;">
     <input type="password" class="login-input" id="passwordInput" placeholder="Şifre" autocomplete="current-password">
     <input type="password" class="login-input" id="passwordConfirm" placeholder="Şifreyi tekrar gir" autocomplete="new-password" style="display:none;">
     <button class="login-btn" id="loginBtn">Giriş Yap</button>
     <div class="login-error" id="loginError"></div>
     <div class="login-info" id="loginInfo">
-      🔐 <strong>Tamamen güvenli:</strong> Şifren ve verilerin sadece bu cihazda saklanır. Hiçbir sunucuya gönderilmez.
+      ☁️ <strong>Bulut Senkronizasyonu Aktif:</strong> Verilerin Firebase'de şifreli olarak saklanır. Tüm cihazlarından aynı verilere erişebilirsin.
     </div>
-    <div style="text-align:center; margin-top:16px;">
-      <button id="resetBtn" style="font-size:12px; color:var(--text-mute); text-decoration:underline; display:none;">Şifremi unuttum (verileri sıfırla)</button>
+    <div style="text-align:center; margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+      <button id="newAccountBtn" style="font-size:13px; color:var(--accent); font-weight:600;">Yeni hesap oluştur</button>
+      <button id="existingAccountBtn" style="font-size:13px; color:var(--primary); font-weight:600; display:none;">Mevcut hesaba bağlan</button>
+      <button id="resetBtn" style="font-size:12px; color:var(--text-mute); text-decoration:underline; margin-top:4px;">Bu cihazı sıfırla</button>
     </div>
   </div>
 </div>
@@ -702,10 +755,9 @@ input:focus, select:focus, textarea:focus { outline: none; }
 <div class="app" id="app">
   <header class="header">
     <div class="header-row">
-      <div class="header-title"><span class="dot"></span><span>Kart Takip</span></div>
+      <div class="header-title">💳 Kart Takip</div>
       <div class="header-actions">
-        <button class="icon-btn" id="exportBtn" title="Yedekle">⬇</button>
-        <button class="icon-btn" id="importBtn" title="Geri yükle">⬆</button>
+        <span class="sync-status" id="syncStatus"><span class="dot-icon"></span><span id="syncText">Hazır</span></span>
         <button class="icon-btn" id="lockBtn" title="Kilitle">🔒</button>
       </div>
     </div>
@@ -713,7 +765,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 
   <main class="content">
     
-    <!-- PAGE: HOME -->
+    <!-- HOME -->
     <div class="page active" id="page-home">
       <h1 class="page-title">Ana Panel</h1>
       <p class="page-subtitle" id="todayDate"></p>
@@ -722,7 +774,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
         <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--accent), var(--accent-2));">
           <div class="stat-label">Bu Ay Ödenecek</div>
           <div class="stat-value" id="stat-payment">₺0</div>
-          <div class="stat-meta" id="stat-payment-meta">4 kart</div>
+          <div class="stat-meta" id="stat-payment-meta">0 kart</div>
         </div>
         <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--primary), var(--purple));">
           <div class="stat-label">Bu Ay Harcama</div>
@@ -742,34 +794,22 @@ input:focus, select:focus, textarea:focus { outline: none; }
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">📅 Bu Ay Ödeme Takvimi</div>
-        </div>
-        <div class="section-body">
-          <div class="payment-list" id="paymentList"></div>
-        </div>
+        <div class="section-header"><div class="section-title">📅 Bu Ay Ödeme Takvimi</div></div>
+        <div class="section-body"><div class="payment-list" id="paymentList"></div></div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">🏷️ Kategori Dağılımı (Bu Ay)</div>
-        </div>
-        <div class="section-body">
-          <div class="cat-list" id="catList"></div>
-        </div>
+        <div class="section-header"><div class="section-title">🏷️ Kategori Dağılımı (Bu Ay)</div></div>
+        <div class="section-body"><div class="cat-list" id="catList"></div></div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">📊 Son 6 Ay Trendi</div>
-        </div>
-        <div class="section-body">
-          <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
-        </div>
+        <div class="section-header"><div class="section-title">📊 Son 6 Ay Trendi</div></div>
+        <div class="section-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
       </div>
     </div>
 
-    <!-- PAGE: EXPENSES -->
+    <!-- EXPENSES -->
     <div class="page" id="page-expenses">
       <h1 class="page-title">Harcamalar</h1>
       <p class="page-subtitle">Tüm işlemlerin</p>
@@ -782,13 +822,11 @@ input:focus, select:focus, textarea:focus { outline: none; }
       </div>
 
       <div class="section">
-        <div class="section-body no-pad">
-          <div class="expense-list" id="expenseList"></div>
-        </div>
+        <div class="section-body no-pad"><div class="expense-list" id="expenseList"></div></div>
       </div>
     </div>
 
-    <!-- PAGE: CALENDAR -->
+    <!-- CALENDAR -->
     <div class="page" id="page-calendar">
       <h1 class="page-title">Aylık Plan</h1>
       <p class="page-subtitle">Gelecek 12 ayın ödeme takvimi</p>
@@ -796,58 +834,38 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <div class="month-selector" id="monthSelector"></div>
       
       <div class="section">
-        <div class="section-header">
-          <div class="section-title" id="selectedMonthLabel">Bu Ay</div>
-        </div>
-        <div class="section-body">
-          <div class="payment-list" id="monthDetail"></div>
-        </div>
+        <div class="section-header"><div class="section-title" id="selectedMonthLabel">Bu Ay</div></div>
+        <div class="section-body"><div class="payment-list" id="monthDetail"></div></div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">📈 12 Aylık Tahmin</div>
-        </div>
-        <div class="section-body">
-          <div class="chart-wrap"><canvas id="forecastChart"></canvas></div>
-        </div>
+        <div class="section-header"><div class="section-title">📈 12 Aylık Tahmin</div></div>
+        <div class="section-body"><div class="chart-wrap"><canvas id="forecastChart"></canvas></div></div>
       </div>
     </div>
 
-    <!-- PAGE: STATS -->
+    <!-- STATS -->
     <div class="page" id="page-stats">
       <h1 class="page-title">İstatistikler</h1>
       <p class="page-subtitle">Detaylı analiz</p>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">🏷️ Kategori Dağılımı</div>
-        </div>
-        <div class="section-body">
-          <div class="chart-wrap"><canvas id="catChart"></canvas></div>
-        </div>
+        <div class="section-header"><div class="section-title">🏷️ Kategori Dağılımı</div></div>
+        <div class="section-body"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">💳 Kart Bazlı Bu Ay</div>
-        </div>
-        <div class="section-body">
-          <div class="chart-wrap"><canvas id="cardChart"></canvas></div>
-        </div>
+        <div class="section-header"><div class="section-title">💳 Kart Bazlı Bu Ay</div></div>
+        <div class="section-body"><div class="chart-wrap"><canvas id="cardChart"></canvas></div></div>
       </div>
 
       <div class="section">
-        <div class="section-header">
-          <div class="section-title">📊 Genel Özet</div>
-        </div>
-        <div class="section-body">
-          <div id="generalStats"></div>
-        </div>
+        <div class="section-header"><div class="section-title">📊 Genel Özet</div></div>
+        <div class="section-body"><div id="generalStats"></div></div>
       </div>
     </div>
 
-    <!-- PAGE: SETTINGS -->
+    <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <h1 class="page-title">Ayarlar</h1>
       <p class="page-subtitle">Kart, kategori ve veri yönetimi</p>
@@ -855,7 +873,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <div class="mgmt-tabs">
         <div class="mgmt-tab active" data-mgmt="cards">💳 Kartlar</div>
         <div class="mgmt-tab" data-mgmt="categories">🏷️ Kategoriler</div>
-        <div class="mgmt-tab" data-mgmt="security">🔐 Güvenlik</div>
+        <div class="mgmt-tab" data-mgmt="security">🔐 Hesap</div>
       </div>
 
       <div id="mgmt-cards" class="mgmt-section">
@@ -871,8 +889,20 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <div id="mgmt-security" class="mgmt-section" style="display:none;">
         <div class="section">
           <div class="section-body" style="padding-top:16px;">
+            <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px;">☁️ Bulut Hesap Bilgisi</h3>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Bu ID'yi başka cihazda giriş yaparken kullanırsın. Şifrenle birlikte verilerine erişirsin.</p>
+            <div class="cloud-id-box">
+              <div class="cloud-id-label">Bulut ID</div>
+              <div class="cloud-id-value" id="cloudIdDisplay">-</div>
+            </div>
+            <button class="btn btn-secondary btn-block" onclick="copyCloudId()">📋 Bulut ID'yi Kopyala</button>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:14px;">
+          <div class="section-body" style="padding-top:16px;">
             <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px;">Şifre Değiştir</h3>
-            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Yeni bir şifre belirle. Eski şifreni doğrulamadan değişiklik yapamazsın.</p>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Yeni bir şifre belirle. Diğer cihazlarda da bu şifreyi kullanmalısın.</p>
             <div class="form-group">
               <label class="form-label">Mevcut Şifre</label>
               <input type="password" class="form-input" id="oldPass">
@@ -891,9 +921,20 @@ input:focus, select:focus, textarea:focus { outline: none; }
 
         <div class="section" style="margin-top:14px;">
           <div class="section-body" style="padding-top:16px;">
+            <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px;">💾 Yerel Yedekleme</h3>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Verilerinin yerel JSON yedeğini al veya geri yükle.</p>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" style="flex:1;" id="exportBtn">⬇ İndir</button>
+              <button class="btn btn-secondary" style="flex:1;" id="importBtn">⬆ Yükle</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:14px;">
+          <div class="section-body" style="padding-top:16px;">
             <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px; color: var(--danger);">Tehlikeli Bölge</h3>
-            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Tüm verilerini siler ve uygulamayı sıfırlar. Bu işlem geri alınamaz.</p>
-            <button class="btn btn-danger btn-block" onclick="resetAll()">Tüm Verileri Sıfırla</button>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Bu cihazdan çıkış yap (veriler bulutta kalır, yeniden bağlanabilirsin).</p>
+            <button class="btn btn-danger btn-block" onclick="logoutDevice()">Çıkış Yap</button>
           </div>
         </div>
       </div>
@@ -920,43 +961,15 @@ input:focus, select:focus, textarea:focus { outline: none; }
     <div class="modal-handle"></div>
     <h2 class="modal-title" id="expenseModalTitle">Yeni Harcama</h2>
     <p class="modal-subtitle">İşlem detaylarını gir</p>
-
-    <div class="form-group">
-      <label class="form-label">Tarih</label>
-      <input type="date" class="form-input" id="exp-date">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Açıklama</label>
-      <input type="text" class="form-input" id="exp-desc" placeholder="Örn: Migros alışveriş">
-    </div>
-
+    <div class="form-group"><label class="form-label">Tarih</label><input type="date" class="form-input" id="exp-date"></div>
+    <div class="form-group"><label class="form-label">Açıklama</label><input type="text" class="form-input" id="exp-desc" placeholder="Örn: Migros alışveriş"></div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Tutar (₺)</label>
-        <input type="number" step="0.01" class="form-input" id="exp-amount" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Taksit</label>
-        <input type="number" min="1" max="36" class="form-input" id="exp-taksit" value="1">
-      </div>
+      <div class="form-group"><label class="form-label">Tutar (₺)</label><input type="number" step="0.01" class="form-input" id="exp-amount" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label">Taksit</label><input type="number" min="1" max="36" class="form-input" id="exp-taksit" value="1"></div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Kart</label>
-      <select class="form-select" id="exp-card"></select>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Kategori</label>
-      <select class="form-select" id="exp-category"></select>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Not (Opsiyonel)</label>
-      <input type="text" class="form-input" id="exp-note">
-    </div>
-
+    <div class="form-group"><label class="form-label">Kart</label><select class="form-select" id="exp-card"></select></div>
+    <div class="form-group"><label class="form-label">Kategori</label><select class="form-select" id="exp-category"></select></div>
+    <div class="form-group"><label class="form-label">Not (Opsiyonel)</label><input type="text" class="form-input" id="exp-note"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('expenseModal')">İptal</button>
       <button class="btn btn-danger" id="exp-delete-btn" style="display:none;" onclick="deleteExpense()">Sil</button>
@@ -971,28 +984,12 @@ input:focus, select:focus, textarea:focus { outline: none; }
     <div class="modal-handle"></div>
     <h2 class="modal-title" id="cardModalTitle">Yeni Kart</h2>
     <p class="modal-subtitle">Kart bilgilerini gir</p>
-
-    <div class="form-group">
-      <label class="form-label">Kart Adı</label>
-      <input type="text" class="form-input" id="card-name" placeholder="Örn: Yapı Kredi">
-    </div>
-
+    <div class="form-group"><label class="form-label">Kart Adı</label><input type="text" class="form-input" id="card-name" placeholder="Örn: Yapı Kredi"></div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Hesap Kesim Günü</label>
-        <input type="number" min="1" max="31" class="form-input" id="card-cutoff" placeholder="12">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Son Ödeme Günü</label>
-        <input type="number" min="1" max="31" class="form-input" id="card-due" placeholder="21">
-      </div>
+      <div class="form-group"><label class="form-label">Hesap Kesim Günü</label><input type="number" min="1" max="31" class="form-input" id="card-cutoff" placeholder="12"></div>
+      <div class="form-group"><label class="form-label">Son Ödeme Günü</label><input type="number" min="1" max="31" class="form-input" id="card-due" placeholder="21"></div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Limit (Opsiyonel)</label>
-      <input type="number" min="0" class="form-input" id="card-limit" placeholder="0">
-    </div>
-
+    <div class="form-group"><label class="form-label">Limit (Opsiyonel)</label><input type="number" min="0" class="form-input" id="card-limit" placeholder="0"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('cardModal')">İptal</button>
       <button class="btn btn-danger" id="card-delete-btn" style="display:none;" onclick="deleteCard()">Sil</button>
@@ -1007,17 +1004,8 @@ input:focus, select:focus, textarea:focus { outline: none; }
     <div class="modal-handle"></div>
     <h2 class="modal-title" id="catModalTitle">Yeni Kategori</h2>
     <p class="modal-subtitle">Kategori adı ve ikonu gir</p>
-
-    <div class="form-group">
-      <label class="form-label">Kategori Adı</label>
-      <input type="text" class="form-input" id="cat-name" placeholder="Örn: Market">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">İkon (Emoji)</label>
-      <input type="text" class="form-input" id="cat-icon" placeholder="🛒" maxlength="4">
-    </div>
-
+    <div class="form-group"><label class="form-label">Kategori Adı</label><input type="text" class="form-input" id="cat-name" placeholder="Örn: Market"></div>
+    <div class="form-group"><label class="form-label">İkon (Emoji)</label><input type="text" class="form-input" id="cat-icon" placeholder="🛒" maxlength="4"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('categoryModal')">İptal</button>
       <button class="btn btn-danger" id="cat-delete-btn" style="display:none;" onclick="deleteCategory()">Sil</button>
@@ -1026,26 +1014,26 @@ input:focus, select:focus, textarea:focus { outline: none; }
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ============================================================================
-// VERİ YAPISI VE ŞIFRELEME
+// CONFIG
+// ============================================================================
+const CLOUD_ID_KEY = 'krediKart_cloudId';
+const HASH_KEY = 'krediKart_hash';
+const LOCAL_DATA_KEY = 'krediKart_localData';
+
+// ============================================================================
+// CRYPTO HELPERS
 // ============================================================================
 
-const STORAGE_KEY = 'krediKartTakip_v1';
-const HASH_KEY = 'krediKartTakip_hash';
-
-// Basit ama güvenli SHA-256 hash (subtle crypto)
 async function hash(text) {
   const buffer = new TextEncoder().encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Şifre ile veri şifreleme (basit XOR-tabanlı)
 async function deriveKey(password) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -1087,6 +1075,17 @@ async function decryptData(encrypted, password) {
   return JSON.parse(new TextDecoder().decode(decrypted));
 }
 
+// Rastgele Cloud ID üret
+function generateCloudId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id = '';
+  for (let i = 0; i < 12; i++) {
+    id += chars[Math.floor(Math.random() * chars.length)];
+    if (i === 3 || i === 7) id += '-';
+  }
+  return id;
+}
+
 // ============================================================================
 // STATE
 // ============================================================================
@@ -1094,16 +1093,31 @@ async function decryptData(encrypted, password) {
 let state = {
   cards: [],
   categories: [],
-  expenses: []
+  expenses: [],
+  lastUpdated: 0
 };
 let currentPassword = null;
+let currentCloudId = null;
 let editingExpense = null;
 let editingCard = null;
 let editingCategory = null;
 let selectedMonthIdx = 0;
+let firebaseListener = null;
+let isApplyingRemoteUpdate = false;
+let pendingSaveTimeout = null;
 
 // ============================================================================
-// VARSAYILAN VERİ
+// SYNC STATUS
+// ============================================================================
+
+function setSyncStatus(status, text) {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status ' + status;
+  document.getElementById('syncText').textContent = text;
+}
+
+// ============================================================================
+// DEFAULTS
 // ============================================================================
 
 const DEFAULT_CARDS = [
@@ -1128,33 +1142,79 @@ const DEFAULT_CATEGORIES = [
 ];
 
 // ============================================================================
-// ŞIFRE/LOGIN AKIŞI
+// LOGIN
 // ============================================================================
 
+let loginMode = 'auto'; // auto, new, existing
+
+function waitForFirebase() {
+  return new Promise((resolve) => {
+    if (window.firebaseReady) return resolve();
+    window.addEventListener('firebase-ready', () => resolve());
+  });
+}
+
 async function init() {
-  const hasAccount = localStorage.getItem(HASH_KEY);
+  await waitForFirebase();
+  
+  const cloudId = localStorage.getItem(CLOUD_ID_KEY);
+  const hashStored = localStorage.getItem(HASH_KEY);
+
   const loginTitle = document.getElementById('loginTitle');
   const loginSubtitle = document.getElementById('loginSubtitle');
   const passwordConfirm = document.getElementById('passwordConfirm');
+  const cloudIdInput = document.getElementById('cloudIdInput');
   const loginBtn = document.getElementById('loginBtn');
-  const resetBtn = document.getElementById('resetBtn');
+  const newAccountBtn = document.getElementById('newAccountBtn');
+  const existingAccountBtn = document.getElementById('existingAccountBtn');
+  const loginInfo = document.getElementById('loginInfo');
 
-  if (!hasAccount) {
-    // İlk kez kullanıyor
-    loginTitle.textContent = 'Hoş Geldin!';
-    loginSubtitle.textContent = 'Bir şifre belirle, sonra her açılışta bunu gireceksin';
-    passwordConfirm.style.display = 'block';
-    loginBtn.textContent = 'Şifre Oluştur';
-  } else {
+  if (cloudId && hashStored) {
+    // Bu cihaz daha önce kullanılmış
+    loginMode = 'returning';
     loginTitle.textContent = 'Tekrar Hoşgeldin';
     loginSubtitle.textContent = 'Şifreni girerek devam et';
+    cloudIdInput.style.display = 'none';
     passwordConfirm.style.display = 'none';
     loginBtn.textContent = 'Giriş Yap';
-    resetBtn.style.display = 'inline';
+    newAccountBtn.style.display = 'none';
+    existingAccountBtn.style.display = 'none';
+  } else {
+    // İlk kullanım
+    loginMode = 'new';
+    showNewAccountForm();
   }
 
   document.getElementById('passwordInput').focus();
 }
+
+function showNewAccountForm() {
+  loginMode = 'new';
+  document.getElementById('loginTitle').textContent = 'Yeni Hesap';
+  document.getElementById('loginSubtitle').textContent = 'Bir şifre belirle, bulut ID otomatik oluşturulacak';
+  document.getElementById('cloudIdInput').style.display = 'none';
+  document.getElementById('passwordConfirm').style.display = 'block';
+  document.getElementById('loginBtn').textContent = 'Hesap Oluştur';
+  document.getElementById('newAccountBtn').style.display = 'none';
+  document.getElementById('existingAccountBtn').style.display = 'inline';
+  document.getElementById('loginError').textContent = '';
+}
+
+function showExistingAccountForm() {
+  loginMode = 'existing';
+  document.getElementById('loginTitle').textContent = 'Mevcut Hesaba Bağlan';
+  document.getElementById('loginSubtitle').textContent = 'Bulut ID ve şifreni gir';
+  document.getElementById('cloudIdInput').style.display = 'block';
+  document.getElementById('passwordConfirm').style.display = 'none';
+  document.getElementById('loginBtn').textContent = 'Bağlan';
+  document.getElementById('newAccountBtn').style.display = 'inline';
+  document.getElementById('existingAccountBtn').style.display = 'none';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('cloudIdInput').focus();
+}
+
+document.getElementById('newAccountBtn').addEventListener('click', showNewAccountForm);
+document.getElementById('existingAccountBtn').addEventListener('click', showExistingAccountForm);
 
 document.getElementById('loginBtn').addEventListener('click', handleLogin);
 document.getElementById('passwordInput').addEventListener('keypress', (e) => {
@@ -1169,13 +1229,15 @@ document.getElementById('passwordInput').addEventListener('keypress', (e) => {
 document.getElementById('passwordConfirm').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') handleLogin();
 });
+document.getElementById('cloudIdInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') document.getElementById('passwordInput').focus();
+});
 
 async function handleLogin() {
   const pwd = document.getElementById('passwordInput').value;
   const pwdConfirm = document.getElementById('passwordConfirm').value;
+  const cloudIdEntered = document.getElementById('cloudIdInput').value.trim().toUpperCase();
   const errorEl = document.getElementById('loginError');
-  const hasAccount = localStorage.getItem(HASH_KEY);
-  
   errorEl.textContent = '';
 
   if (!pwd || pwd.length < 4) {
@@ -1183,44 +1245,127 @@ async function handleLogin() {
     return;
   }
 
-  if (!hasAccount) {
-    // Yeni kullanıcı - şifre oluştur
+  setSyncStatus('syncing', 'Bağlanıyor...');
+
+  if (loginMode === 'new') {
+    // Yeni hesap
     if (pwd !== pwdConfirm) {
       errorEl.textContent = 'Şifreler eşleşmiyor';
       return;
     }
+    
+    const newCloudId = generateCloudId();
     const h = await hash(pwd);
-    localStorage.setItem(HASH_KEY, h);
+    
+    currentCloudId = newCloudId;
     currentPassword = pwd;
+    
     state = {
       cards: [...DEFAULT_CARDS],
       categories: [...DEFAULT_CATEGORIES],
-      expenses: []
+      expenses: [],
+      lastUpdated: Date.now()
     };
-    await saveState();
-    enterApp();
+    
+    // İlk kayıt
+    try {
+      await uploadToFirebase();
+      localStorage.setItem(CLOUD_ID_KEY, newCloudId);
+      localStorage.setItem(HASH_KEY, h);
+      saveLocal();
+      enterApp();
+      
+      // Cloud ID'yi göster
+      setTimeout(() => {
+        alert('🎉 Hesabın oluşturuldu!\n\nBULUT ID:\n' + newCloudId + '\n\nBu ID\'yi NOT AL! Başka cihazdan giriş yaparken gerekli olacak.\n\nAyarlar > Hesap kısmından da görebilirsin.');
+      }, 500);
+    } catch (e) {
+      errorEl.textContent = 'Bağlantı hatası: ' + e.message;
+      setSyncStatus('error', 'Hata');
+    }
+    
+  } else if (loginMode === 'existing') {
+    // Mevcut hesaba bağlan
+    if (!cloudIdEntered) {
+      errorEl.textContent = 'Bulut ID gir';
+      return;
+    }
+    
+    currentCloudId = cloudIdEntered;
+    currentPassword = pwd;
+    
+    try {
+      const data = await downloadFromFirebase();
+      if (!data) {
+        errorEl.textContent = 'Bu Bulut ID\'ye ait veri bulunamadı';
+        setSyncStatus('error', 'Hata');
+        return;
+      }
+      
+      state = data;
+      const h = await hash(pwd);
+      localStorage.setItem(CLOUD_ID_KEY, cloudIdEntered);
+      localStorage.setItem(HASH_KEY, h);
+      saveLocal();
+      enterApp();
+    } catch (e) {
+      if (e.message && e.message.includes('decrypt')) {
+        errorEl.textContent = 'Şifre yanlış';
+      } else {
+        errorEl.textContent = 'Bağlantı hatası: ' + e.message;
+      }
+      setSyncStatus('error', 'Hata');
+    }
+    
   } else {
-    // Mevcut kullanıcı - giriş
+    // Returning user
+    const storedHash = localStorage.getItem(HASH_KEY);
     const inputHash = await hash(pwd);
-    if (inputHash !== hasAccount) {
+    
+    if (inputHash !== storedHash) {
       errorEl.textContent = 'Şifre yanlış';
       document.getElementById('passwordInput').value = '';
       document.getElementById('passwordInput').focus();
+      setSyncStatus('error', 'Hata');
       return;
     }
+    
+    currentCloudId = localStorage.getItem(CLOUD_ID_KEY);
     currentPassword = pwd;
+    
     try {
-      await loadState();
+      // Önce yerel veriyi yükle (hızlı)
+      const localData = loadLocal();
+      if (localData) state = localData;
+      
+      // Sonra buluttan güncel veriyi al
+      const cloudData = await downloadFromFirebase();
+      if (cloudData && cloudData.lastUpdated > (state.lastUpdated || 0)) {
+        state = cloudData;
+        saveLocal();
+      } else if (!cloudData && state.expenses) {
+        // Bulutta yok ama yerelde var - upload et
+        await uploadToFirebase();
+      }
+      
       enterApp();
     } catch (e) {
-      errorEl.textContent = 'Veriler okunamadı';
-      console.error(e);
+      // Bulut hatası - yerel ile devam
+      const localData = loadLocal();
+      if (localData) {
+        state = localData;
+        enterApp();
+        showToast('⚠️ Bulut bağlantısı yok, çevrimdışı çalışıyor', 'error');
+      } else {
+        errorEl.textContent = 'Bağlantı hatası, lütfen tekrar dene';
+        setSyncStatus('error', 'Hata');
+      }
     }
   }
 }
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-  if (confirm('TÜM verilerin silinecek ve uygulama sıfırdan başlayacak. Emin misin?')) {
+  if (confirm('Bu cihazdaki yerel veriler silinecek (bulutta verilerin kalır). Emin misin?')) {
     localStorage.clear();
     location.reload();
   }
@@ -1231,48 +1376,128 @@ function enterApp() {
   document.getElementById('app').classList.add('active');
   document.getElementById('passwordInput').value = '';
   document.getElementById('passwordConfirm').value = '';
+  document.getElementById('cloudIdInput').value = '';
+  document.getElementById('cloudIdDisplay').textContent = currentCloudId;
+  
+  setSyncStatus('synced', 'Senkron');
   renderAll();
-}
-
-async function saveState() {
-  if (!currentPassword) return;
-  const encrypted = await encryptData(state, currentPassword);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(encrypted));
-}
-
-async function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    state = {
-      cards: [...DEFAULT_CARDS],
-      categories: [...DEFAULT_CATEGORIES],
-      expenses: []
-    };
-    await saveState();
-    return;
-  }
-  const encrypted = JSON.parse(raw);
-  state = await decryptData(encrypted, currentPassword);
-  // Eksik alanları doldur (eski versiyon)
-  if (!state.cards) state.cards = [...DEFAULT_CARDS];
-  if (!state.categories) state.categories = [...DEFAULT_CATEGORIES];
-  if (!state.expenses) state.expenses = [];
+  startFirebaseListener();
 }
 
 // ============================================================================
-// HARCAMA HESAPLAMA MANTIĞI
+// FIREBASE OPERATIONS
+// ============================================================================
+
+async function uploadToFirebase() {
+  if (!currentCloudId || !currentPassword) return;
+  setSyncStatus('syncing', 'Yükleniyor...');
+  
+  state.lastUpdated = Date.now();
+  const encrypted = await encryptData(state, currentPassword);
+  
+  const docRef = window.fbDoc(window.fbDb, 'users', currentCloudId);
+  await window.fbSetDoc(docRef, {
+    encrypted: JSON.stringify(encrypted),
+    lastUpdated: state.lastUpdated
+  });
+  
+  setSyncStatus('synced', 'Senkron');
+}
+
+async function downloadFromFirebase() {
+  if (!currentCloudId || !currentPassword) return null;
+  
+  const docRef = window.fbDoc(window.fbDb, 'users', currentCloudId);
+  const docSnap = await window.fbGetDoc(docRef);
+  
+  if (!docSnap.exists()) return null;
+  
+  const data = docSnap.data();
+  const encrypted = JSON.parse(data.encrypted);
+  return await decryptData(encrypted, currentPassword);
+}
+
+function startFirebaseListener() {
+  if (firebaseListener) firebaseListener();
+  
+  const docRef = window.fbDoc(window.fbDb, 'users', currentCloudId);
+  firebaseListener = window.fbOnSnapshot(docRef, async (docSnap) => {
+    if (!docSnap.exists()) return;
+    
+    const data = docSnap.data();
+    const remoteUpdated = data.lastUpdated;
+    
+    // Eğer bizim yüklemediğimiz bir değişiklik varsa
+    if (remoteUpdated > (state.lastUpdated || 0)) {
+      try {
+        const encrypted = JSON.parse(data.encrypted);
+        const newState = await decryptData(encrypted, currentPassword);
+        
+        isApplyingRemoteUpdate = true;
+        state = newState;
+        saveLocal();
+        renderAll();
+        isApplyingRemoteUpdate = false;
+        
+        showToast('☁️ Diğer cihazdan güncellendi', 'success');
+      } catch (e) {
+        console.error('Remote update parse error:', e);
+      }
+    }
+  }, (error) => {
+    console.error('Listener error:', error);
+    setSyncStatus('error', 'Bağlantı yok');
+  });
+}
+
+// ============================================================================
+// LOCAL STORAGE
+// ============================================================================
+
+function saveLocal() {
+  localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(state));
+}
+
+function loadLocal() {
+  const raw = localStorage.getItem(LOCAL_DATA_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+// ============================================================================
+// SAVE STATE (with debounce)
+// ============================================================================
+
+async function saveState() {
+  if (isApplyingRemoteUpdate) return;
+  
+  state.lastUpdated = Date.now();
+  saveLocal();
+  
+  // Debounce upload (kullanıcı hızlı değişiklikler yapıyorsa toplu gönder)
+  if (pendingSaveTimeout) clearTimeout(pendingSaveTimeout);
+  pendingSaveTimeout = setTimeout(async () => {
+    try {
+      await uploadToFirebase();
+    } catch (e) {
+      console.error('Upload error:', e);
+      setSyncStatus('error', 'Yüklenemedi');
+      // 30 saniye sonra tekrar dene
+      setTimeout(() => uploadToFirebase().catch(()=>{}), 30000);
+    }
+  }, 500);
+}
+
+// ============================================================================
+// HELPERS
 // ============================================================================
 
 function getPaymentMonth(expense) {
-  // Hesap kesim tarihinden sonra alınan harcamalar bir sonraki dönemin ekstresinde
   const card = state.cards.find(c => c.id === expense.cardId);
   if (!card) return null;
-  
   const date = new Date(expense.date);
   const expDay = date.getDate();
-  
   if (expDay > card.cutoff) {
-    // Sonraki ayın ekstresi
     const next = new Date(date.getFullYear(), date.getMonth() + 1, 1);
     return next.getFullYear() + '-' + String(next.getMonth() + 1).padStart(2, '0');
   } else {
@@ -1280,31 +1505,14 @@ function getPaymentMonth(expense) {
   }
 }
 
-function getMonthKey(date) {
-  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
-}
+function getMonthKey(date) { return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0'); }
+function getExpenseMonth(expense) { return getMonthKey(new Date(expense.date)); }
+function formatCurrency(num) { return '₺' + (num || 0).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function formatDate(d) { if (typeof d === 'string') d = new Date(d); return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+function formatMonthYear(d) { return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }); }
 
-function getExpenseMonth(expense) {
-  return getMonthKey(new Date(expense.date));
-}
-
-function formatCurrency(num) {
-  return '₺' + (num || 0).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-}
-
-function formatDate(d) {
-  if (typeof d === 'string') d = new Date(d);
-  return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function formatMonthYear(d) {
-  return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-}
-
-// Bir kartın belirli ay için son ödeme tarihi
 function getDueDate(card, monthYearStr) {
   const [y, m] = monthYearStr.split('-').map(Number);
-  // Eğer son ödeme günü hesap kesim gününden küçükse, ay sonra ödenir
   let dueMonth = m;
   let dueYear = y;
   if (card.due < card.cutoff) {
@@ -1315,7 +1523,7 @@ function getDueDate(card, monthYearStr) {
 }
 
 // ============================================================================
-// RENDER FONKSİYONLARI
+// RENDER
 // ============================================================================
 
 function renderAll() {
@@ -1342,33 +1550,15 @@ function renderHome() {
   const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
   const lastMonthKey = getMonthKey(lastMonthDate);
 
-  // Bu ay ödeme
   let totalPayment = 0;
-  state.expenses.forEach(e => {
-    if (getPaymentMonth(e) === thisMonthKey) {
-      totalPayment += (e.amount / e.taksit);
-    }
-  });
+  state.expenses.forEach(e => { if (getPaymentMonth(e) === thisMonthKey) totalPayment += (e.amount / e.taksit); });
 
-  // Bu ay harcama
-  let monthSpending = 0;
-  let monthCount = 0;
-  state.expenses.forEach(e => {
-    if (getExpenseMonth(e) === thisMonthKey) {
-      monthSpending += e.amount;
-      monthCount++;
-    }
-  });
+  let monthSpending = 0, monthCount = 0;
+  state.expenses.forEach(e => { if (getExpenseMonth(e) === thisMonthKey) { monthSpending += e.amount; monthCount++; } });
 
-  // Geçen ay
   let lastMonthSpending = 0;
-  state.expenses.forEach(e => {
-    if (getExpenseMonth(e) === lastMonthKey) {
-      lastMonthSpending += e.amount;
-    }
-  });
+  state.expenses.forEach(e => { if (getExpenseMonth(e) === lastMonthKey) lastMonthSpending += e.amount; });
 
-  // Aktif taksit
   const activeTaksit = state.expenses.filter(e => e.taksit > 1).length;
 
   document.getElementById('stat-payment').textContent = formatCurrency(totalPayment);
@@ -1378,7 +1568,6 @@ function renderHome() {
   document.getElementById('stat-lastmonth').textContent = formatCurrency(lastMonthSpending);
   document.getElementById('stat-taksit').textContent = activeTaksit;
 
-  // Trend
   const trendEl = document.getElementById('stat-trend');
   if (lastMonthSpending > 0) {
     const diff = ((monthSpending - lastMonthSpending) / lastMonthSpending) * 100;
@@ -1389,13 +1578,8 @@ function renderHome() {
     trendEl.textContent = '—';
   }
 
-  // Ödeme takvimi
   renderPaymentList();
-  
-  // Kategori dağılımı
   renderCategoryBars();
-
-  // Trend grafik
   renderTrendChart();
 }
 
@@ -1412,11 +1596,7 @@ function renderPaymentList() {
 
   const cardPayments = state.cards.map(card => {
     let total = 0;
-    state.expenses.forEach(e => {
-      if (e.cardId === card.id && getPaymentMonth(e) === thisMonthKey) {
-        total += e.amount / e.taksit;
-      }
-    });
+    state.expenses.forEach(e => { if (e.cardId === card.id && getPaymentMonth(e) === thisMonthKey) total += e.amount / e.taksit; });
     const dueDate = getDueDate(card, thisMonthKey);
     const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
     return { card, total, dueDate, daysLeft };
@@ -1424,7 +1604,6 @@ function renderPaymentList() {
 
   cardPayments.forEach(({ card, total, dueDate, daysLeft }) => {
     const urgentClass = daysLeft < 0 ? '' : (daysLeft <= 3 ? 'urgent' : (daysLeft <= 7 ? 'warning' : ''));
-    
     let daysText;
     if (daysLeft < 0) daysText = Math.abs(daysLeft) + ' gün geçti';
     else if (daysLeft === 0) daysText = 'Bugün son gün!';
@@ -1433,20 +1612,10 @@ function renderPaymentList() {
     
     list.innerHTML += `
       <div class="payment-item ${urgentClass}">
-        <div class="day-badge">
-          <div class="num">${dueDate.getDate()}</div>
-          <div class="month">${dueDate.toLocaleDateString('tr-TR', { month: 'short' }).replace('.','')}</div>
-        </div>
-        <div class="payment-info">
-          <div class="name">${card.name}</div>
-          <div class="meta">Kesim: ${card.cutoff} • Ödeme: ${card.due}</div>
-        </div>
-        <div class="payment-amount">
-          ${formatCurrency(total)}
-          <span class="days">${daysText}</span>
-        </div>
-      </div>
-    `;
+        <div class="day-badge"><div class="num">${dueDate.getDate()}</div><div class="month">${dueDate.toLocaleDateString('tr-TR', { month: 'short' }).replace('.','')}</div></div>
+        <div class="payment-info"><div class="name">${card.name}</div><div class="meta">Kesim: ${card.cutoff} • Ödeme: ${card.due}</div></div>
+        <div class="payment-amount">${formatCurrency(total)}<span class="days">${daysText}</span></div>
+      </div>`;
   });
 }
 
@@ -1457,11 +1626,7 @@ function renderCategoryBars() {
   list.innerHTML = '';
 
   const categoryTotals = {};
-  state.expenses.forEach(e => {
-    if (getExpenseMonth(e) === thisMonthKey) {
-      categoryTotals[e.categoryId] = (categoryTotals[e.categoryId] || 0) + e.amount;
-    }
-  });
+  state.expenses.forEach(e => { if (getExpenseMonth(e) === thisMonthKey) categoryTotals[e.categoryId] = (categoryTotals[e.categoryId] || 0) + e.amount; });
 
   const sorted = Object.entries(categoryTotals)
     .map(([catId, total]) => ({ cat: state.categories.find(c => c.id === catId), total }))
@@ -1480,22 +1645,15 @@ function renderCategoryBars() {
     const pct = (item.total / grandTotal) * 100;
     list.innerHTML += `
       <div class="cat-item">
-        <div class="cat-row">
-          <span class="cat-name">${item.cat.icon} ${item.cat.name}</span>
-          <span class="cat-amount">${formatCurrency(item.total)} • ${pct.toFixed(0)}%</span>
-        </div>
-        <div class="cat-bar">
-          <div class="cat-bar-fill" style="width:${pct}%; background:${colors[idx % colors.length]}"></div>
-        </div>
-      </div>
-    `;
+        <div class="cat-row"><span class="cat-name">${item.cat.icon} ${item.cat.name}</span><span class="cat-amount">${formatCurrency(item.total)} • ${pct.toFixed(0)}%</span></div>
+        <div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%; background:${colors[idx % colors.length]}"></div></div>
+      </div>`;
   });
 }
 
 let trendChart = null;
 function renderTrendChart() {
   const today = new Date();
-  const months = [];
   const labels = [];
   const data = [];
 
@@ -1503,9 +1661,7 @@ function renderTrendChart() {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const key = getMonthKey(d);
     let total = 0;
-    state.expenses.forEach(e => {
-      if (getExpenseMonth(e) === key) total += e.amount;
-    });
+    state.expenses.forEach(e => { if (getExpenseMonth(e) === key) total += e.amount; });
     labels.push(d.toLocaleDateString('tr-TR', { month: 'short' }));
     data.push(total);
   }
@@ -1514,47 +1670,24 @@ function renderTrendChart() {
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245,158,11,0.1)',
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#f59e0b',
-        pointBorderColor: '#0a0e1a',
-        pointBorderWidth: 2,
-        pointRadius: 5
-      }]
-    },
+    data: { labels, datasets: [{ data, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#f59e0b', pointBorderColor: '#0a0e1a', pointBorderWidth: 2, pointRadius: 5 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: {
-          ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' },
-          grid: { color: 'rgba(148,163,184,0.1)' }
-        },
-        x: {
-          ticks: { color: '#94a3b8' },
-          grid: { display: false }
-        }
+        y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
       }
     }
   });
 }
 
-// === EXPENSES PAGE ===
 let currentFilter = 'all';
-
 function renderExpenses() {
   const list = document.getElementById('expenseList');
   list.innerHTML = '';
 
   let filtered = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
-  
   const today = new Date();
   const thisMonthKey = getMonthKey(today);
   const lastMonthKey = getMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
@@ -1574,16 +1707,9 @@ function renderExpenses() {
     list.innerHTML += `
       <div class="expense-item" onclick="editExpense('${e.id}')">
         <div class="expense-icon">${cat ? cat.icon : '💸'}</div>
-        <div class="expense-info">
-          <div class="desc">${e.desc || (cat ? cat.name : 'Harcama')}</div>
-          <div class="meta">${formatDate(e.date)} • ${card ? card.name : '?'} • ${cat ? cat.name : '?'}</div>
-        </div>
-        <div class="expense-amount">
-          ${formatCurrency(e.amount)}
-          ${e.taksit > 1 ? `<span class="taksit">${e.taksit} taksit</span>` : ''}
-        </div>
-      </div>
-    `;
+        <div class="expense-info"><div class="desc">${e.desc || (cat ? cat.name : 'Harcama')}</div><div class="meta">${formatDate(e.date)} • ${card ? card.name : '?'} • ${cat ? cat.name : '?'}</div></div>
+        <div class="expense-amount">${formatCurrency(e.amount)}${e.taksit > 1 ? `<span class="taksit">${e.taksit} taksit</span>` : ''}</div>
+      </div>`;
   });
 }
 
@@ -1596,20 +1722,16 @@ document.querySelectorAll('#filterChips .chip').forEach(chip => {
   });
 });
 
-// === CALENDAR PAGE ===
 function renderCalendar() {
   const selector = document.getElementById('monthSelector');
   selector.innerHTML = '';
   const today = new Date();
 
-  // 12 ay - bu aydan ileriye
   for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const key = getMonthKey(d);
     let total = 0;
-    state.expenses.forEach(e => {
-      if (getPaymentMonth(e) === key) total += e.amount / e.taksit;
-    });
+    state.expenses.forEach(e => { if (getPaymentMonth(e) === key) total += e.amount / e.taksit; });
 
     const isActive = i === selectedMonthIdx;
     const futureCls = i > 0 ? 'future' : '';
@@ -1617,8 +1739,7 @@ function renderCalendar() {
       <div class="month-pill ${isActive ? 'active' : ''} ${futureCls}" data-idx="${i}">
         <span class="label">${d.toLocaleDateString('tr-TR', { month: 'short' })}</span>
         <span class="amount">${total > 0 ? formatCurrency(total) : '—'}</span>
-      </div>
-    `;
+      </div>`;
   }
 
   document.querySelectorAll('.month-pill').forEach(p => {
@@ -1637,7 +1758,6 @@ function renderMonthDetail() {
   const today = new Date();
   const target = new Date(today.getFullYear(), today.getMonth() + selectedMonthIdx, 1);
   const key = getMonthKey(target);
-  
   document.getElementById('selectedMonthLabel').textContent = formatMonthYear(target).toUpperCase();
 
   const list = document.getElementById('monthDetail');
@@ -1649,97 +1769,56 @@ function renderMonthDetail() {
   }
 
   state.cards.forEach(card => {
-    let total = 0;
-    let count = 0;
-    state.expenses.forEach(e => {
-      if (e.cardId === card.id && getPaymentMonth(e) === key) {
-        total += e.amount / e.taksit;
-        count++;
-      }
-    });
-
+    let total = 0, count = 0;
+    state.expenses.forEach(e => { if (e.cardId === card.id && getPaymentMonth(e) === key) { total += e.amount / e.taksit; count++; } });
     const dueDate = getDueDate(card, key);
-    
     list.innerHTML += `
       <div class="payment-item">
-        <div class="day-badge">
-          <div class="num">${dueDate.getDate()}</div>
-          <div class="month">${dueDate.toLocaleDateString('tr-TR', { month: 'short' }).replace('.','')}</div>
-        </div>
-        <div class="payment-info">
-          <div class="name">${card.name}</div>
-          <div class="meta">${count} işlem${count > 0 ? '' : ' • boş'}</div>
-        </div>
+        <div class="day-badge"><div class="num">${dueDate.getDate()}</div><div class="month">${dueDate.toLocaleDateString('tr-TR', { month: 'short' }).replace('.','')}</div></div>
+        <div class="payment-info"><div class="name">${card.name}</div><div class="meta">${count} işlem${count > 0 ? '' : ' • boş'}</div></div>
         <div class="payment-amount">${formatCurrency(total)}</div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
 let forecastChart = null;
 function renderForecastChart() {
   const today = new Date();
-  const labels = [];
-  const data = [];
-
+  const labels = [], data = [];
   for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const key = getMonthKey(d);
     let total = 0;
-    state.expenses.forEach(e => {
-      if (getPaymentMonth(e) === key) total += e.amount / e.taksit;
-    });
+    state.expenses.forEach(e => { if (getPaymentMonth(e) === key) total += e.amount / e.taksit; });
     labels.push(d.toLocaleDateString('tr-TR', { month: 'short' }));
     data.push(total);
   }
-
   const ctx = document.getElementById('forecastChart').getContext('2d');
   if (forecastChart) forecastChart.destroy();
   forecastChart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: data.map((_, i) => i === 0 ? '#f59e0b' : 'rgba(96,165,250,0.6)'),
-        borderRadius: 8
-      }]
-    },
+    data: { labels, datasets: [{ data, backgroundColor: data.map((_, i) => i === 0 ? '#f59e0b' : 'rgba(96,165,250,0.6)'), borderRadius: 8 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: {
-          ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' },
-          grid: { color: 'rgba(148,163,184,0.1)' }
-        },
-        x: {
-          ticks: { color: '#94a3b8' },
-          grid: { display: false }
-        }
+        y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
       }
     }
   });
 }
 
-// === STATS PAGE ===
 let catChart = null, cardChart = null;
 function renderStats() {
   const today = new Date();
   const thisMonthKey = getMonthKey(today);
 
-  // Kategori chart
   const catTotals = {};
-  state.expenses.forEach(e => {
-    if (getExpenseMonth(e) === thisMonthKey) {
-      catTotals[e.categoryId] = (catTotals[e.categoryId] || 0) + e.amount;
-    }
-  });
+  state.expenses.forEach(e => { if (getExpenseMonth(e) === thisMonthKey) catTotals[e.categoryId] = (catTotals[e.categoryId] || 0) + e.amount; });
   const catSorted = Object.entries(catTotals)
     .map(([id, total]) => ({ cat: state.categories.find(c => c.id === id), total }))
-    .filter(x => x.cat)
-    .sort((a, b) => b.total - a.total);
+    .filter(x => x.cat).sort((a, b) => b.total - a.total);
 
   const catCtx = document.getElementById('catChart').getContext('2d');
   if (catChart) catChart.destroy();
@@ -1747,33 +1826,14 @@ function renderStats() {
     type: 'doughnut',
     data: {
       labels: catSorted.map(x => x.cat.icon + ' ' + x.cat.name),
-      datasets: [{
-        data: catSorted.map(x => x.total),
-        backgroundColor: ['#f59e0b', '#60a5fa', '#34d399', '#a78bfa', '#f472b6', '#2dd4bf', '#fb923c', '#f87171', '#fbbf24', '#3b82f6'],
-        borderWidth: 0
-      }]
+      datasets: [{ data: catSorted.map(x => x.total), backgroundColor: ['#f59e0b', '#60a5fa', '#34d399', '#a78bfa', '#f472b6', '#2dd4bf', '#fb923c', '#f87171', '#fbbf24', '#3b82f6'], borderWidth: 0 }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '60%',
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: { color: '#e8edf5', font: { size: 11 }, boxWidth: 12 }
-        }
-      }
-    }
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { color: '#e8edf5', font: { size: 11 }, boxWidth: 12 } } } }
   });
 
-  // Kart chart
   const cardTotals = state.cards.map(card => {
     let total = 0;
-    state.expenses.forEach(e => {
-      if (e.cardId === card.id && getExpenseMonth(e) === thisMonthKey) {
-        total += e.amount;
-      }
-    });
+    state.expenses.forEach(e => { if (e.cardId === card.id && getExpenseMonth(e) === thisMonthKey) total += e.amount; });
     return { card, total };
   });
 
@@ -1781,119 +1841,72 @@ function renderStats() {
   if (cardChart) cardChart.destroy();
   cardChart = new Chart(cardCtx, {
     type: 'bar',
-    data: {
-      labels: cardTotals.map(x => x.card.name),
-      datasets: [{
-        data: cardTotals.map(x => x.total),
-        backgroundColor: ['#f59e0b', '#60a5fa', '#a78bfa', '#34d399'],
-        borderRadius: 8
-      }]
-    },
+    data: { labels: cardTotals.map(x => x.card.name), datasets: [{ data: cardTotals.map(x => x.total), backgroundColor: ['#f59e0b', '#60a5fa', '#a78bfa', '#34d399'], borderRadius: 8 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
       plugins: { legend: { display: false } },
       scales: {
-        x: {
-          ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(1) + 'k' },
-          grid: { color: 'rgba(148,163,184,0.1)' }
-        },
-        y: {
-          ticks: { color: '#e8edf5' },
-          grid: { display: false }
-        }
+        x: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(1) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+        y: { ticks: { color: '#e8edf5' }, grid: { display: false } }
       }
     }
   });
 
-  // Genel istatistikler
   const totalAllTime = state.expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalTransactions = state.expenses.length;
   const avgTransaction = totalTransactions > 0 ? totalAllTime / totalTransactions : 0;
-  
-  // En çok harcanan kategori
   const allCatTotals = {};
-  state.expenses.forEach(e => {
-    allCatTotals[e.categoryId] = (allCatTotals[e.categoryId] || 0) + e.amount;
-  });
+  state.expenses.forEach(e => { allCatTotals[e.categoryId] = (allCatTotals[e.categoryId] || 0) + e.amount; });
   const topCat = Object.entries(allCatTotals).sort((a,b) => b[1]-a[1])[0];
   const topCatObj = topCat ? state.categories.find(c => c.id === topCat[0]) : null;
 
   document.getElementById('generalStats').innerHTML = `
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;">
-        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Toplam Harcama</div>
-        <div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${formatCurrency(totalAllTime)}</div>
-      </div>
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;">
-        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Toplam İşlem</div>
-        <div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${totalTransactions}</div>
-      </div>
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;">
-        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Ortalama İşlem</div>
-        <div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${formatCurrency(avgTransaction)}</div>
-      </div>
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;">
-        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">En Çok Harcanan</div>
-        <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin-top:4px;">${topCatObj ? topCatObj.icon + ' ' + topCatObj.name : '—'}</div>
-      </div>
-    </div>
-  `;
+      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Toplam Harcama</div><div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${formatCurrency(totalAllTime)}</div></div>
+      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Toplam İşlem</div><div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${totalTransactions}</div></div>
+      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Ortalama İşlem</div><div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${formatCurrency(avgTransaction)}</div></div>
+      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">En Çok Harcanan</div><div style="font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin-top:4px;">${topCatObj ? topCatObj.icon + ' ' + topCatObj.name : '—'}</div></div>
+    </div>`;
 }
 
-// === SETTINGS / MGMT ===
 function renderCardsList() {
   const list = document.getElementById('cardList');
   list.innerHTML = '';
-
   if (state.cards.length === 0) {
     list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart eklenmemiş</div></div>';
     return;
   }
-
   state.cards.forEach(card => {
     list.innerHTML += `
       <div class="mgmt-card">
         <div class="mgmt-row">
           <div class="mgmt-name">${card.name}</div>
-          <div class="mgmt-actions">
-            <div class="mgmt-icon-btn" onclick="editCard('${card.id}')">✏️</div>
-          </div>
+          <div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCard('${card.id}')">✏️</div></div>
         </div>
         <div class="mgmt-detail">
           <span>📅 Kesim: ${card.cutoff}</span>
           <span>💰 Ödeme: ${card.due}</span>
           ${card.limit > 0 ? '<span>💎 Limit: ' + formatCurrency(card.limit) + '</span>' : ''}
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
 function renderCategoriesList() {
   const list = document.getElementById('categoryList');
   list.innerHTML = '';
-
   if (state.categories.length === 0) {
     list.innerHTML = '<div class="empty"><div class="icon">🏷️</div><div class="text">Kategori eklenmemiş</div></div>';
     return;
   }
-
   state.categories.forEach(cat => {
     list.innerHTML += `
       <div class="mgmt-card">
         <div class="mgmt-row" style="margin-bottom:0;">
-          <div class="mgmt-name" style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:24px;">${cat.icon}</span>
-            <span>${cat.name}</span>
-          </div>
-          <div class="mgmt-actions">
-            <div class="mgmt-icon-btn" onclick="editCategory('${cat.id}')">✏️</div>
-          </div>
+          <div class="mgmt-name" style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">${cat.icon}</span><span>${cat.name}</span></div>
+          <div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCategory('${cat.id}')">✏️</div></div>
         </div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
@@ -1905,7 +1918,7 @@ function populateExpenseFormDropdowns() {
 }
 
 // ============================================================================
-// NAVIGATION
+// NAV
 // ============================================================================
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -1929,36 +1942,23 @@ document.querySelectorAll('.mgmt-tab').forEach(tab => {
 });
 
 // ============================================================================
-// MODAL FONKSİYONLARI
+// MODALS
 // ============================================================================
 
-function openModal(id) {
-  document.getElementById(id).classList.add('active');
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('active');
-}
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+window.closeModal = closeModal;
 
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.classList.remove('active');
-  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
 });
 
-// === EXPENSE MODAL ===
 function openExpenseModal() {
-  if (state.cards.length === 0) {
-    showToast('Önce en az bir kart eklemelisin', 'error');
-    return;
-  }
-  if (state.categories.length === 0) {
-    showToast('Önce en az bir kategori eklemelisin', 'error');
-    return;
-  }
+  if (state.cards.length === 0) { showToast('Önce en az bir kart ekle', 'error'); return; }
+  if (state.categories.length === 0) { showToast('Önce en az bir kategori ekle', 'error'); return; }
   editingExpense = null;
   document.getElementById('expenseModalTitle').textContent = 'Yeni Harcama';
   document.getElementById('exp-delete-btn').style.display = 'none';
-  
   const today = new Date();
   document.getElementById('exp-date').value = today.toISOString().split('T')[0];
   document.getElementById('exp-desc').value = '';
@@ -1966,9 +1966,9 @@ function openExpenseModal() {
   document.getElementById('exp-taksit').value = 1;
   document.getElementById('exp-note').value = '';
   populateExpenseFormDropdowns();
-  
   openModal('expenseModal');
 }
+window.openExpenseModal = openExpenseModal;
 
 function editExpense(id) {
   const exp = state.expenses.find(e => e.id === id);
@@ -1976,7 +1976,6 @@ function editExpense(id) {
   editingExpense = exp;
   document.getElementById('expenseModalTitle').textContent = 'Harcamayı Düzenle';
   document.getElementById('exp-delete-btn').style.display = 'inline-flex';
-  
   populateExpenseFormDropdowns();
   document.getElementById('exp-date').value = exp.date;
   document.getElementById('exp-desc').value = exp.desc || '';
@@ -1985,9 +1984,9 @@ function editExpense(id) {
   document.getElementById('exp-card').value = exp.cardId;
   document.getElementById('exp-category').value = exp.categoryId;
   document.getElementById('exp-note').value = exp.note || '';
-  
   openModal('expenseModal');
 }
+window.editExpense = editExpense;
 
 async function saveExpense() {
   const date = document.getElementById('exp-date').value;
@@ -1997,24 +1996,17 @@ async function saveExpense() {
   const cardId = document.getElementById('exp-card').value;
   const categoryId = document.getElementById('exp-category').value;
   const note = document.getElementById('exp-note').value.trim();
-
   if (!date) { showToast('Tarih girin', 'error'); return; }
   if (!amount || amount <= 0) { showToast('Geçerli tutar girin', 'error'); return; }
-
   const data = { date, desc, amount, taksit, cardId, categoryId, note };
-
-  if (editingExpense) {
-    Object.assign(editingExpense, data);
-  } else {
-    data.id = 'e' + Date.now() + Math.random().toString(36).slice(2, 5);
-    state.expenses.push(data);
-  }
-
+  if (editingExpense) Object.assign(editingExpense, data);
+  else { data.id = 'e' + Date.now() + Math.random().toString(36).slice(2, 5); state.expenses.push(data); }
   await saveState();
   closeModal('expenseModal');
   renderAll();
   showToast(editingExpense ? '✏️ Güncellendi' : '✅ Eklendi', 'success');
 }
+window.saveExpense = saveExpense;
 
 async function deleteExpense() {
   if (!editingExpense) return;
@@ -2025,8 +2017,8 @@ async function deleteExpense() {
   renderAll();
   showToast('🗑️ Silindi', 'success');
 }
+window.deleteExpense = deleteExpense;
 
-// === CARD MODAL ===
 function openCardModal() {
   editingCard = null;
   document.getElementById('cardModalTitle').textContent = 'Yeni Kart';
@@ -2037,6 +2029,7 @@ function openCardModal() {
   document.getElementById('card-limit').value = '';
   openModal('cardModal');
 }
+window.openCardModal = openCardModal;
 
 function editCard(id) {
   const card = state.cards.find(c => c.id === id);
@@ -2050,28 +2043,24 @@ function editCard(id) {
   document.getElementById('card-limit').value = card.limit || '';
   openModal('cardModal');
 }
+window.editCard = editCard;
 
 async function saveCard() {
   const name = document.getElementById('card-name').value.trim();
   const cutoff = parseInt(document.getElementById('card-cutoff').value);
   const due = parseInt(document.getElementById('card-due').value);
   const limit = parseFloat(document.getElementById('card-limit').value) || 0;
-
   if (!name) { showToast('Kart adı girin', 'error'); return; }
   if (!cutoff || cutoff < 1 || cutoff > 31) { showToast('Geçerli kesim günü (1-31)', 'error'); return; }
   if (!due || due < 1 || due > 31) { showToast('Geçerli ödeme günü (1-31)', 'error'); return; }
-
-  if (editingCard) {
-    Object.assign(editingCard, { name, cutoff, due, limit });
-  } else {
-    state.cards.push({ id: 'c' + Date.now(), name, cutoff, due, limit });
-  }
-
+  if (editingCard) Object.assign(editingCard, { name, cutoff, due, limit });
+  else state.cards.push({ id: 'c' + Date.now(), name, cutoff, due, limit });
   await saveState();
   closeModal('cardModal');
   renderAll();
   showToast(editingCard ? '✏️ Güncellendi' : '✅ Eklendi', 'success');
 }
+window.saveCard = saveCard;
 
 async function deleteCard() {
   if (!editingCard) return;
@@ -2088,8 +2077,8 @@ async function deleteCard() {
   renderAll();
   showToast('🗑️ Silindi', 'success');
 }
+window.deleteCard = deleteCard;
 
-// === CATEGORY MODAL ===
 function openCategoryModal() {
   editingCategory = null;
   document.getElementById('catModalTitle').textContent = 'Yeni Kategori';
@@ -2098,6 +2087,7 @@ function openCategoryModal() {
   document.getElementById('cat-icon').value = '';
   openModal('categoryModal');
 }
+window.openCategoryModal = openCategoryModal;
 
 function editCategory(id) {
   const cat = state.categories.find(c => c.id === id);
@@ -2109,32 +2099,25 @@ function editCategory(id) {
   document.getElementById('cat-icon').value = cat.icon;
   openModal('categoryModal');
 }
+window.editCategory = editCategory;
 
 async function saveCategory() {
   const name = document.getElementById('cat-name').value.trim();
   const icon = document.getElementById('cat-icon').value.trim() || '🏷️';
-
   if (!name) { showToast('Kategori adı girin', 'error'); return; }
-
-  if (editingCategory) {
-    Object.assign(editingCategory, { name, icon });
-  } else {
-    state.categories.push({ id: 'k' + Date.now(), name, icon });
-  }
-
+  if (editingCategory) Object.assign(editingCategory, { name, icon });
+  else state.categories.push({ id: 'k' + Date.now(), name, icon });
   await saveState();
   closeModal('categoryModal');
   renderAll();
   showToast(editingCategory ? '✏️ Güncellendi' : '✅ Eklendi', 'success');
 }
+window.saveCategory = saveCategory;
 
 async function deleteCategory() {
   if (!editingCategory) return;
   const usedBy = state.expenses.filter(e => e.categoryId === editingCategory.id).length;
-  if (usedBy > 0) {
-    showToast(`Bu kategoride ${usedBy} harcama var. Önce onları başka kategoriye taşıyın.`, 'error');
-    return;
-  }
+  if (usedBy > 0) { showToast(`Bu kategoride ${usedBy} harcama var.`, 'error'); return; }
   if (!confirm('Bu kategoriyi silmek istiyor musun?')) return;
   state.categories = state.categories.filter(c => c.id !== editingCategory.id);
   await saveState();
@@ -2142,15 +2125,14 @@ async function deleteCategory() {
   renderAll();
   showToast('🗑️ Silindi', 'success');
 }
+window.deleteCategory = deleteCategory;
 
 // ============================================================================
 // HEADER ACTIONS
 // ============================================================================
 
 document.getElementById('lockBtn').addEventListener('click', () => {
-  if (confirm('Uygulamayı kilitlemek istiyor musun?')) {
-    location.reload();
-  }
+  if (confirm('Uygulamayı kilitlemek istiyor musun?')) location.reload();
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
@@ -2171,7 +2153,7 @@ document.getElementById('importBtn').addEventListener('click', () => {
   input.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!confirm('Mevcut verilerinin üzerine yazılacak. Devam edilsin mi?')) return;
+    if (!confirm('Mevcut verilerinin üzerine yazılacak ve buluta gönderilecek. Devam edilsin mi?')) return;
     try {
       const text = await file.text();
       const data = JSON.parse(text);
@@ -2180,54 +2162,50 @@ document.getElementById('importBtn').addEventListener('click', () => {
         await saveState();
         renderAll();
         showToast('✅ Geri yüklendi', 'success');
-      } else {
-        showToast('Geçersiz yedek dosyası', 'error');
-      }
-    } catch (err) {
-      showToast('Dosya okunamadı', 'error');
-    }
+      } else { showToast('Geçersiz yedek', 'error'); }
+    } catch (err) { showToast('Dosya okunamadı', 'error'); }
   };
   input.click();
 });
 
-// === GÜVENLIK ===
 async function changePassword() {
   const old = document.getElementById('oldPass').value;
   const newP = document.getElementById('newPass').value;
   const conf = document.getElementById('newPassConfirm').value;
-
   if (!old || !newP) { showToast('Tüm alanları doldurun', 'error'); return; }
   if (newP.length < 4) { showToast('Yeni şifre en az 4 karakter olmalı', 'error'); return; }
   if (newP !== conf) { showToast('Yeni şifreler eşleşmiyor', 'error'); return; }
-  
   const oldHash = await hash(old);
-  if (oldHash !== localStorage.getItem(HASH_KEY)) {
-    showToast('Mevcut şifre yanlış', 'error');
-    return;
-  }
-
-  // Yeni şifreyle yeniden şifrele
+  if (oldHash !== localStorage.getItem(HASH_KEY)) { showToast('Mevcut şifre yanlış', 'error'); return; }
+  
   const newHash = await hash(newP);
   localStorage.setItem(HASH_KEY, newHash);
   currentPassword = newP;
-  await saveState();
+  await uploadToFirebase(); // Yeni şifreyle tekrar şifrele ve yükle
   
   document.getElementById('oldPass').value = '';
   document.getElementById('newPass').value = '';
   document.getElementById('newPassConfirm').value = '';
-  showToast('🔐 Şifre değiştirildi', 'success');
+  showToast('🔐 Şifre değiştirildi (tüm cihazlarda yeni şifre kullan)', 'success');
 }
+window.changePassword = changePassword;
 
-function resetAll() {
-  if (!confirm('TÜM verilerin silinecek. Bu işlem geri alınamaz. Emin misin?')) return;
-  if (!confirm('Son uyarı! Tüm harcamalar, kartlar, kategoriler ve şifren silinecek. Devam edilsin mi?')) return;
-  localStorage.clear();
+function copyCloudId() {
+  navigator.clipboard.writeText(currentCloudId).then(() => {
+    showToast('📋 Bulut ID kopyalandı', 'success');
+  });
+}
+window.copyCloudId = copyCloudId;
+
+function logoutDevice() {
+  if (!confirm('Bu cihazdan çıkış yapmak istiyor musun? Verilerin bulutta kalacak, tekrar bağlanabilirsin.')) return;
+  if (firebaseListener) firebaseListener();
+  localStorage.removeItem(LOCAL_DATA_KEY);
+  localStorage.removeItem(HASH_KEY);
+  localStorage.removeItem(CLOUD_ID_KEY);
   location.reload();
 }
-
-// ============================================================================
-// TOAST
-// ============================================================================
+window.logoutDevice = logoutDevice;
 
 let toastTimer = null;
 function showToast(msg, type = '') {
