@@ -1908,23 +1908,41 @@ function populateCatMonthSelect() {
   if (!select) return;
   
   const today = new Date();
-  const months = [];
-  // Geçmiş 12 ay + bu ay + gelecek 6 ay
-  for (let i = -12; i <= 6; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-    const key = getMonthKey(d);
+  const todayKey = getMonthKey(today);
+  
+  // Hangi aylarda veri var bul
+  const dataMonths = new Set();
+  state.expenses.forEach(e => {
+    // Hem harcama ayı hem ödeme dönemleri
+    dataMonths.add(getExpenseMonth(e));
+    const schedule = getPaymentSchedule(e);
+    schedule.forEach(s => dataMonths.add(s.month));
+  });
+  
+  // Bu ayı her zaman ekle
+  dataMonths.add(todayKey);
+  
+  // Geçen ayı da ekle (varsayılan kıyaslama için)
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  dataMonths.add(getMonthKey(lastMonth));
+  
+  // Sırala (en yeni en üstte)
+  const sortedMonths = [...dataMonths].sort().reverse();
+  
+  // Eğer seçili ay listede yoksa, bu aya çek
+  if (!catSelectedMonth || !sortedMonths.includes(catSelectedMonth)) {
+    catSelectedMonth = todayKey;
+  }
+  
+  // Etiket oluştur
+  const months = sortedMonths.map(key => {
+    const d = new Date(key + '-01');
     let label = d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-    if (i === 0) label = '📍 Bu Ay (' + label + ')';
-    else if (i === -1) label = 'Geçen Ay (' + label + ')';
-    months.push({ key, label, isCurrent: i === 0 });
-  }
-  
-  // Aksi yönde sırala (en yeni en üstte)
-  months.reverse();
-  
-  if (!catSelectedMonth) {
-    catSelectedMonth = getMonthKey(today);
-  }
+    if (key === todayKey) label = '📍 Bu Ay (' + label + ')';
+    else if (key === getMonthKey(lastMonth)) label = 'Geçen Ay (' + label + ')';
+    else if (d > today) label = '🔮 ' + label + ' (Gelecek)';
+    return { key, label };
+  });
   
   select.innerHTML = months.map(m => 
     `<option value="${m.key}" ${m.key === catSelectedMonth ? 'selected' : ''}>${m.label}</option>`
