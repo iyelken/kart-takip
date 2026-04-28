@@ -200,8 +200,6 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .payment-amount.paid-amount { color: var(--success); }
 
 .pay-btn {
-  background: var(--success);
-  color: #0a0e1a;
   font-weight: 700;
   font-size: 11px;
   padding: 8px 12px;
@@ -210,8 +208,20 @@ input:focus, select:focus, textarea:focus { outline: none; }
   transition: transform 0.15s;
 }
 .pay-btn:active { transform: scale(0.95); }
-.pay-btn.unpaid { background: var(--warning); color: #0a0e1a; }
-.pay-btn.unpaid:hover { background: var(--danger); color: white; }
+/* Ödenmemiş = "Öde" turuncu çağrı butonu */
+.pay-btn.todo {
+  background: var(--warning);
+  color: #0a0e1a;
+  border: 2px solid var(--warning);
+}
+/* Ödenmiş = "Ödendi" yeşil işaret + geri al */
+.pay-btn.done {
+  background: rgba(52,211,153,0.15);
+  color: var(--success);
+  border: 1px solid rgba(52,211,153,0.4);
+  font-size: 10px;
+  padding: 6px 10px;
+}
 
 /* === ACCOUNTS === */
 .account-grid { display: grid; gap: 10px; }
@@ -1431,9 +1441,9 @@ function renderUpcomingPayments() {
     if (paid) {
       const account = state.accounts.find(a => a.id === paid.accountId);
       paidMeta = `<div class="paid-meta">${account ? account.name : '?'} hesabından ${formatDate(paid.date)}</div>`;
-      payButton = `<button class="pay-btn unpaid" onclick="askUndoPayment('${paid.id}')">↩ Geri Al</button>`;
+      payButton = `<button class="pay-btn done" onclick="askUndoPayment('${paid.id}')">✓ Ödendi ↩</button>`;
     } else {
-      payButton = `<button class="pay-btn" onclick="askPayment('${card.id}','${monthKey}',${amount})">✓ Ödendi</button>`;
+      payButton = `<button class="pay-btn todo" onclick="askPayment('${card.id}','${monthKey}',${amount})">💳 Öde</button>`;
     }
 
     list.innerHTML += `
@@ -1652,9 +1662,9 @@ function renderMonthDetail() {
     if (paid) {
       const account = state.accounts.find(a => a.id === paid.accountId);
       paidMeta = `<div class="paid-meta">${account ? account.name : '?'} hesabından</div>`;
-      payButton = `<button class="pay-btn unpaid" onclick="askUndoPayment('${paid.id}')">↩</button>`;
+      payButton = `<button class="pay-btn done" onclick="askUndoPayment('${paid.id}')">✓</button>`;
     } else if (total > 0) {
-      payButton = `<button class="pay-btn" onclick="askPayment('${card.id}','${key}',${total})">✓</button>`;
+      payButton = `<button class="pay-btn todo" onclick="askPayment('${card.id}','${key}',${total})">💳</button>`;
     } else {
       payButton = '<div></div>';
     }
