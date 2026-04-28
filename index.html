@@ -566,6 +566,8 @@ input:focus, select:focus, textarea:focus { outline: none; }
         <div class="chip" data-filter="taksit">Taksitli</div>
       </div>
 
+      <div class="chip-row" id="cardFilterChips"></div>
+
       <div class="section">
         <div class="section-body no-pad"><div class="expense-list" id="expenseList"></div></div>
       </div>
@@ -1597,17 +1599,52 @@ function renderTrendChart() {
 }
 
 let currentFilter = 'all';
+let currentCardFilter = 'all';
+
+function renderCardFilters() {
+  const container = document.getElementById('cardFilterChips');
+  if (state.cards.length === 0) { container.innerHTML = ''; return; }
+  let html = `<div class="chip ${currentCardFilter === 'all' ? 'active' : ''}" data-card="all">💳 Tüm Kartlar</div>`;
+  state.cards.forEach(card => {
+    html += `<div class="chip ${currentCardFilter === card.id ? 'active' : ''}" data-card="${card.id}">${card.name}</div>`;
+  });
+  container.innerHTML = html;
+  
+  container.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      currentCardFilter = chip.dataset.card;
+      renderCardFilters();
+      renderExpenses();
+    });
+  });
+}
+
 function renderExpenses() {
+  renderCardFilters();
   const list = document.getElementById('expenseList');
   list.innerHTML = '';
   let filtered = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
   const today = new Date();
   const thisMonthKey = getMonthKey(today);
   const lastMonthKey = getMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+  
   if (currentFilter === 'thismonth') filtered = filtered.filter(e => getExpenseMonth(e) === thisMonthKey);
   else if (currentFilter === 'lastmonth') filtered = filtered.filter(e => getExpenseMonth(e) === lastMonthKey);
   else if (currentFilter === 'taksit') filtered = filtered.filter(e => e.taksit > 1);
-  if (filtered.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Henüz harcama yok</div></div>'; return; }
+  
+  if (currentCardFilter !== 'all') filtered = filtered.filter(e => e.cardId === currentCardFilter);
+  
+  if (filtered.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Bu kriterlere uyan harcama yok</div></div>'; return; }
+  
+  // Toplam tutar göster (filtre uygulanmışsa)
+  if (currentFilter !== 'all' || currentCardFilter !== 'all') {
+    const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+    list.innerHTML += `<div style="padding: 14px 18px; background: var(--bg-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Filtreli Toplam (${filtered.length} işlem)</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent); font-size: 15px;">${formatCurrency(total)}</span>
+    </div>`;
+  }
+  
   filtered.forEach(e => {
     const card = state.cards.find(c => c.id === e.cardId);
     const cat = state.categories.find(c => c.id === e.categoryId);
