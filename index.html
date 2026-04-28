@@ -348,11 +348,12 @@ input:focus, select:focus, textarea:focus { outline: none; }
 /* === MONTH SELECTOR === */
 .month-selector { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
 .month-selector::-webkit-scrollbar { display: none; }
-.month-pill { padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; white-space: nowrap; font-size: 13px; font-weight: 500; flex-shrink: 0; transition: all 0.15s; text-align: center; }
+.month-pill { padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; white-space: nowrap; font-size: 13px; font-weight: 500; flex-shrink: 0; transition: all 0.15s; text-align: center; color: var(--text); }
 .month-pill .label { display: block; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
-.month-pill .amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; margin-top: 2px; }
-.month-pill.active { background: var(--accent); border-color: var(--accent); color: #0a0e1a; }
-.month-pill.active .label { color: #0a0e1a; opacity: 0.7; }
+.month-pill .amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; margin-top: 2px; color: var(--text); }
+.month-pill.active { background: var(--accent); border-color: var(--accent); color: #0a0e1a; box-shadow: 0 4px 14px rgba(245,158,11,0.4); }
+.month-pill.active .label { color: #0a0e1a !important; opacity: 0.75; font-weight: 700; }
+.month-pill.active .amount { color: #0a0e1a !important; font-weight: 700; }
 .month-pill.future { background: var(--bg-2); }
 
 /* === EMPTY === */
@@ -1175,7 +1176,8 @@ async function saveState() {
 }
 
 // === HELPERS ===
-function getPaymentMonth(expense) {
+// Bir harcamanın İLK ödeme dönemini hesapla (taksit ya da değil)
+function getFirstPaymentMonth(expense) {
   const card = state.cards.find(c => c.id === expense.cardId);
   if (!card) return null;
   const date = new Date(expense.date);
@@ -1187,6 +1189,26 @@ function getPaymentMonth(expense) {
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
   }
 }
+
+// Bir harcamanın TÜM taksit dönemlerini döndürür: [{month: 'YYYY-MM', amount: ...}, ...]
+function getPaymentSchedule(expense) {
+  const firstMonth = getFirstPaymentMonth(expense);
+  if (!firstMonth) return [];
+  const taksit = expense.taksit || 1;
+  const monthlyAmount = expense.amount / taksit;
+  const schedule = [];
+  
+  const [year, month] = firstMonth.split('-').map(Number);
+  for (let i = 0; i < taksit; i++) {
+    const d = new Date(year, month - 1 + i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    schedule.push({ month: key, amount: monthlyAmount, taksitNo: i + 1, totalTaksit: taksit });
+  }
+  return schedule;
+}
+
+// Geriye uyumluluk için (eski referanslar)
+function getPaymentMonth(expense) { return getFirstPaymentMonth(expense); }
 
 function getMonthKey(date) { return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0'); }
 function getExpenseMonth(expense) { return getMonthKey(new Date(expense.date)); }
@@ -1204,15 +1226,30 @@ function getDueDate(card, monthYearStr) {
   return new Date(dueYear, dueMonth - 1, Math.min(card.due, new Date(dueYear, dueMonth, 0).getDate()));
 }
 
-// Bir kartın belirli ay için ödenecek tutarını hesapla
+// Bir kartın belirli ay için ödenecek tutarını hesapla (taksitleri dağıtarak)
 function calculateCardPayment(cardId, paymentMonth) {
   let total = 0;
   state.expenses.forEach(e => {
-    if (e.cardId === cardId && getPaymentMonth(e) === paymentMonth) {
-      total += e.amount / e.taksit;
-    }
+    if (e.cardId !== cardId) return;
+    const schedule = getPaymentSchedule(e);
+    schedule.forEach(s => {
+      if (s.month === paymentMonth) total += s.amount;
+    });
   });
   return total;
+}
+
+// Bir kartın belirli ay için işlem (taksit) sayısı
+function getCardPaymentCount(cardId, paymentMonth) {
+  let count = 0;
+  state.expenses.forEach(e => {
+    if (e.cardId !== cardId) return;
+    const schedule = getPaymentSchedule(e);
+    schedule.forEach(s => {
+      if (s.month === paymentMonth) count++;
+    });
+  });
+  return count;
 }
 
 // Bir kart-ay kombinasyonu ödendi mi?
@@ -1253,16 +1290,18 @@ function renderHome() {
   const totalBalance = getTotalBalance();
   document.getElementById('netTotal').textContent = formatCurrency(totalBalance);
 
-  // Bu ay ödenecek (henüz ödenmemiş kartlar - gelecek aylar dahil değil, sadece bu ay vadeli)
+  // Bu ay ödenecek = ödenmemiş geçmiş borçlar + bu ay vadesi gelen borçlar
   let totalDebtThisMonth = 0;
-  state.cards.forEach(card => {
-    const dueDate = getDueDate(card, thisMonthKey);
-    if (dueDate.getMonth() === today.getMonth() && dueDate.getFullYear() === today.getFullYear()) {
-      const payment = calculateCardPayment(card.id, thisMonthKey);
-      const paid = isPaymentMade(card.id, thisMonthKey);
+  // Geçmiş 6 ay + bu ay
+  for (let offset = -6; offset <= 0; offset++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+    const monthKey = getMonthKey(d);
+    state.cards.forEach(card => {
+      const payment = calculateCardPayment(card.id, monthKey);
+      const paid = isPaymentMade(card.id, monthKey);
       if (payment > 0 && !paid) totalDebtThisMonth += payment;
-    }
-  });
+    });
+  }
   document.getElementById('netDebt').textContent = formatCurrency(totalDebtThisMonth);
   document.getElementById('netProjected').textContent = formatCurrency(totalBalance - totalDebtThisMonth);
 
@@ -1299,7 +1338,7 @@ function renderHome() {
   renderTrendChart();
 }
 
-// En yakın 4 ödemeyi göster (ödenmemiş + ödenmiş karışık olabilir)
+// En yakın 4 ödemeyi göster (taksit dağıtımı dikkate alınmış)
 function renderUpcomingPayments() {
   const today = new Date();
   const list = document.getElementById('paymentList');
@@ -1310,48 +1349,41 @@ function renderUpcomingPayments() {
     return;
   }
 
-  // Önümüzdeki 12 ay için tüm ödeme dönemlerini hesapla
+  // Tüm kart-ay kombinasyonlarını topla (önümüzdeki 24 ay + geçmiş 6 ay)
   const allPayments = [];
-  for (let i = 0; i < 12; i++) {
-    const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
+  const currentMonthIdx = today.getFullYear() * 12 + today.getMonth();
+  
+  for (let offset = -6; offset < 24; offset++) {
+    const monthDate = new Date(today.getFullYear(), today.getMonth() + offset, 1);
     const monthKey = getMonthKey(monthDate);
+    
     state.cards.forEach(card => {
       const amount = calculateCardPayment(card.id, monthKey);
       const paid = isPaymentMade(card.id, monthKey);
       const dueDate = getDueDate(card, monthKey);
       
-      // Ödeme yoksa ve ödenmemiş ise gösterme
-      if (amount > 0 || paid) {
-        allPayments.push({ card, monthKey, amount: paid ? paid.amount : amount, dueDate, paid });
-      }
+      // Geçmiş ay: sadece ödenmemiş olanları göster
+      if (offset < 0 && !paid && amount === 0) return;
+      // Geçmiş ay: ödenmiş olanları gösterme (bittiler)
+      if (offset < 0 && paid) return;
+      // Mevcut ve gelecek ay: tutar yoksa ve ödenmemişse gösterme
+      if (offset >= 0 && amount === 0 && !paid) return;
+      
+      allPayments.push({ card, monthKey, amount: paid ? paid.amount : amount, dueDate, paid, offset });
     });
   }
 
-  // Geçmiş ay ödenmemişleri de ekle (en fazla 6 ay geriye)
-  for (let i = 1; i <= 6; i++) {
-    const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    const monthKey = getMonthKey(monthDate);
-    state.cards.forEach(card => {
-      const amount = calculateCardPayment(card.id, monthKey);
-      const paid = isPaymentMade(card.id, monthKey);
-      // Sadece ödenmemiş geçmiş ödemeler
-      if (amount > 0 && !paid) {
-        const dueDate = getDueDate(card, monthKey);
-        allPayments.push({ card, monthKey, amount, dueDate, paid: null });
-      }
-    });
-  }
-
-  // Sıralama: ödenmemiş geçmiş > ödenmemiş güncel/gelecek > ödenmiş
+  // Sıralama: ödenmemiş geçmiş > ödenmemiş yakın gelecek > ödenmiş
   allPayments.sort((a, b) => {
     const aOverdue = !a.paid && a.dueDate < today;
     const bOverdue = !b.paid && b.dueDate < today;
     if (aOverdue && !bOverdue) return -1;
     if (!aOverdue && bOverdue) return 1;
+    if (a.paid && !b.paid) return 1;
+    if (!a.paid && b.paid) return -1;
     return a.dueDate - b.dueDate;
   });
 
-  // En yakın 4'ü göster
   const visible = allPayments.slice(0, 4);
   
   if (visible.length === 0) {
@@ -1577,13 +1609,13 @@ function renderCalendar() {
   const selector = document.getElementById('monthSelector');
   selector.innerHTML = '';
   const today = new Date();
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 18; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const key = getMonthKey(d);
     let total = 0;
     state.cards.forEach(card => { total += calculateCardPayment(card.id, key); });
     const isActive = i === selectedMonthIdx;
-    selector.innerHTML += `<div class="month-pill ${isActive ? 'active' : ''} ${i > 0 ? 'future' : ''}" data-idx="${i}"><span class="label">${d.toLocaleDateString('tr-TR', { month: 'short' })}</span><span class="amount">${total > 0 ? formatCurrency(total) : '—'}</span></div>`;
+    selector.innerHTML += `<div class="month-pill ${isActive ? 'active' : ''} ${i > 0 ? 'future' : ''}" data-idx="${i}"><span class="label">${d.toLocaleDateString('tr-TR', { month: 'short' })}${i >= 12 ? ' ' + d.getFullYear().toString().slice(-2) : ''}</span><span class="amount">${total > 0 ? formatCurrency(total) : '—'}</span></div>`;
   }
   document.querySelectorAll('.month-pill').forEach(p => {
     p.addEventListener('click', () => { selectedMonthIdx = parseInt(p.dataset.idx); renderCalendar(); renderMonthDetail(); });
@@ -1602,8 +1634,7 @@ function renderMonthDetail() {
   if (state.cards.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart yok</div></div>'; return; }
   state.cards.forEach(card => {
     const total = calculateCardPayment(card.id, key);
-    let count = 0;
-    state.expenses.forEach(e => { if (e.cardId === card.id && getPaymentMonth(e) === key) count++; });
+    const count = getCardPaymentCount(card.id, key);
     const dueDate = getDueDate(card, key);
     const paid = isPaymentMade(card.id, key);
     
@@ -1639,12 +1670,12 @@ let forecastChart = null;
 function renderForecastChart() {
   const today = new Date();
   const labels = [], data = [];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 18; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const key = getMonthKey(d);
     let total = 0;
     state.cards.forEach(card => { total += calculateCardPayment(card.id, key); });
-    labels.push(d.toLocaleDateString('tr-TR', { month: 'short' }));
+    labels.push(d.toLocaleDateString('tr-TR', { month: 'short' }) + (i >= 12 ? ' ' + d.getFullYear().toString().slice(-2) : ''));
     data.push(total);
   }
   const ctx = document.getElementById('forecastChart').getContext('2d');
