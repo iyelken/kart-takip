@@ -470,6 +470,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .forecast-row.warning { border-left-color: var(--warning); }
 .forecast-row.good { border-left-color: var(--success); }
 .forecast-row.current { border-left-color: var(--accent); background: rgba(245,158,11,0.08); }
+.forecast-row.past { border-left-color: var(--text-mute); background: rgba(100,116,139,0.06); opacity: 0.75; }
 
 .forecast-month { font-weight: 700; font-size: 13px; }
 .forecast-month .yr { display: block; font-size: 10px; color: var(--text-dim); font-weight: 500; }
@@ -632,14 +633,34 @@ input:focus, select:focus, textarea:focus { outline: none; }
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title">📥 Son Gelirler</div></div>
+        <div class="section-header">
+          <div class="section-title">📥 Son Gelirler</div>
+          <span class="section-action" id="incomeFilterToggle">📅 Filtrele</span>
+        </div>
+        <div id="incomeFilterPanel" style="display:none; background:var(--bg-2); padding:14px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <select class="form-select" id="incomeFilterYear" style="flex:1; padding:10px;"></select>
+            <select class="form-select" id="incomeFilterMonth" style="flex:1; padding:10px;"></select>
+            <button class="btn btn-secondary" onclick="clearIncomeFilter()" style="padding:10px 14px; font-size:13px;">Sıfırla</button>
+          </div>
+        </div>
         <div class="section-body no-pad">
           <div id="incomeList"></div>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title">💳 Son Kart Ödemeleri</div></div>
+        <div class="section-header">
+          <div class="section-title">💳 Son Kart Ödemeleri</div>
+          <span class="section-action" id="paymentFilterToggle">📅 Filtrele</span>
+        </div>
+        <div id="paymentFilterPanel" style="display:none; background:var(--bg-2); padding:14px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <select class="form-select" id="paymentFilterYear" style="flex:1; padding:10px;"></select>
+            <select class="form-select" id="paymentFilterMonth" style="flex:1; padding:10px;"></select>
+            <button class="btn btn-secondary" onclick="clearPaymentFilter()" style="padding:10px 14px; font-size:13px;">Sıfırla</button>
+          </div>
+        </div>
         <div class="section-body no-pad">
           <div id="paymentHistoryList"></div>
         </div>
@@ -652,10 +673,18 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <p class="page-subtitle">Tüm işlemlerin</p>
 
       <div class="chip-row" id="filterChips">
-        <div class="chip active" data-filter="all">Tümü</div>
-        <div class="chip" data-filter="thismonth">Bu Ay</div>
+        <div class="chip active" data-filter="thismonth">Bu Ay</div>
         <div class="chip" data-filter="lastmonth">Geçen Ay</div>
         <div class="chip" data-filter="taksit">Taksitli</div>
+        <div class="chip" data-filter="custom">📅 Tarih Seç</div>
+      </div>
+
+      <div id="dateFilterPanel" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+          <select class="form-select" id="filterYear" style="flex:1; padding:10px;"></select>
+          <select class="form-select" id="filterMonth" style="flex:1; padding:10px;"></select>
+        </div>
+        <button class="btn btn-secondary btn-block" onclick="applyDateFilter()" style="padding:10px; font-size:14px;">Filtrele</button>
       </div>
 
       <div class="chip-row" id="cardFilterChips"></div>
@@ -717,10 +746,10 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <!-- Aylık Projeksiyon -->
       <div class="section">
         <div class="section-header">
-          <div class="section-title">📊 12 Aylık Detaylı Tahmin</div>
+          <div class="section-title">📊 Geçmiş 3 + Gelecek 12 Ay</div>
         </div>
         <div class="section-body">
-          <p style="font-size:12px; color:var(--text-dim); margin-bottom:16px;">Geçmiş gelir ve harcamalarına göre hesaplandı. Tutarlar tahminidir.</p>
+          <p style="font-size:12px; color:var(--text-dim); margin-bottom:16px;">Geçmiş aylar gerçek verilerden, gelecek aylar tahminlerden oluşur.</p>
           <div class="forecast-table" id="forecastTable"></div>
         </div>
       </div>
@@ -1437,6 +1466,7 @@ function renderAll() {
   renderHeader();
   renderHome();
   renderAccounts();
+  setupAccountFilters();
   renderExpenses();
   renderCalendar();
   renderForecast();
@@ -1644,6 +1674,8 @@ function renderAccounts() {
   let monthIncome = 0;
   state.incomes.forEach(i => { if (getMonthKey(new Date(i.date)) === thisMonthKey) monthIncome += i.amount; });
   document.getElementById('monthIncome').textContent = formatCurrency(monthIncome);
+  
+  populateDateFilterDropdowns();
 
   // Tüm hesaplar
   const list = document.getElementById('allAccounts');
@@ -1664,14 +1696,40 @@ function renderAccounts() {
     });
   }
 
-  // Son gelirler
+  // Son gelirler (filtreli veya son 10)
   const incList = document.getElementById('incomeList');
   incList.innerHTML = '';
-  const recentIncomes = [...state.incomes].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
-  if (recentIncomes.length === 0) {
-    incList.innerHTML = '<div class="empty" style="padding:20px;"><div class="text">Henüz gelir eklenmemiş</div></div>';
+  let filteredIncomes = [...state.incomes].sort((a,b) => new Date(b.date) - new Date(a.date));
+  let incomeTitle = 'Son 10 gelir';
+  
+  if (incomeFilter.year) {
+    filteredIncomes = filteredIncomes.filter(i => {
+      const d = new Date(i.date);
+      if (d.getFullYear() !== incomeFilter.year) return false;
+      if (incomeFilter.month && incomeFilter.month !== 'all' && (d.getMonth() + 1) !== incomeFilter.month) return false;
+      return true;
+    });
+    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    if (incomeFilter.month && incomeFilter.month !== 'all') {
+      incomeTitle = months[incomeFilter.month - 1] + ' ' + incomeFilter.year;
+    } else {
+      incomeTitle = incomeFilter.year + ' yılı';
+    }
   } else {
-    recentIncomes.forEach(inc => {
+    filteredIncomes = filteredIncomes.slice(0, 10);
+  }
+  
+  if (filteredIncomes.length === 0) {
+    incList.innerHTML = '<div class="empty" style="padding:20px;"><div class="text">Bu kriterlere uyan gelir yok</div></div>';
+  } else {
+    // Toplam göster
+    const total = filteredIncomes.reduce((sum, i) => sum + i.amount, 0);
+    incList.innerHTML += `<div style="padding: 12px 18px; background: var(--bg-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase;">${incomeTitle} (${filteredIncomes.length})</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--success); font-size: 14px;">+${formatCurrency(total)}</span>
+    </div>`;
+    
+    filteredIncomes.forEach(inc => {
       const src = state.incomeSources.find(s => s.id === inc.sourceId);
       const acc = state.accounts.find(a => a.id === inc.accountId);
       incList.innerHTML += `
@@ -1686,14 +1744,39 @@ function renderAccounts() {
     });
   }
 
-  // Son kart ödemeleri
+  // Son kart ödemeleri (filtreli veya son 10)
   const payList = document.getElementById('paymentHistoryList');
   payList.innerHTML = '';
-  const recentPayments = [...state.payments].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
-  if (recentPayments.length === 0) {
-    payList.innerHTML = '<div class="empty" style="padding:20px;"><div class="text">Henüz ödeme kaydı yok</div></div>';
+  let filteredPayments = [...state.payments].sort((a,b) => new Date(b.date) - new Date(a.date));
+  let paymentTitle = 'Son 10 ödeme';
+  
+  if (paymentFilter.year) {
+    filteredPayments = filteredPayments.filter(p => {
+      const d = new Date(p.date);
+      if (d.getFullYear() !== paymentFilter.year) return false;
+      if (paymentFilter.month && paymentFilter.month !== 'all' && (d.getMonth() + 1) !== paymentFilter.month) return false;
+      return true;
+    });
+    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    if (paymentFilter.month && paymentFilter.month !== 'all') {
+      paymentTitle = months[paymentFilter.month - 1] + ' ' + paymentFilter.year;
+    } else {
+      paymentTitle = paymentFilter.year + ' yılı';
+    }
   } else {
-    recentPayments.forEach(pay => {
+    filteredPayments = filteredPayments.slice(0, 10);
+  }
+  
+  if (filteredPayments.length === 0) {
+    payList.innerHTML = '<div class="empty" style="padding:20px;"><div class="text">Bu kriterlere uyan ödeme yok</div></div>';
+  } else {
+    const total = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+    payList.innerHTML += `<div style="padding: 12px 18px; background: var(--bg-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase;">${paymentTitle} (${filteredPayments.length})</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent); font-size: 14px;">-${formatCurrency(total)}</span>
+    </div>`;
+    
+    filteredPayments.forEach(pay => {
       const card = state.cards.find(c => c.id === pay.cardId);
       const acc = state.accounts.find(a => a.id === pay.accountId);
       const monthLabel = new Date(pay.paymentMonth + '-01').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
@@ -1709,6 +1792,77 @@ function renderAccounts() {
     });
   }
 }
+
+// Gelir/Ödeme filtre toggle ve uygulama fonksiyonları
+function setupAccountFilters() {
+  const incToggle = document.getElementById('incomeFilterToggle');
+  const incPanel = document.getElementById('incomeFilterPanel');
+  if (incToggle && !incToggle.dataset.bound) {
+    incToggle.addEventListener('click', () => {
+      const isShown = incPanel.style.display === 'block';
+      incPanel.style.display = isShown ? 'none' : 'block';
+    });
+    incToggle.dataset.bound = '1';
+  }
+  
+  const incYearEl = document.getElementById('incomeFilterYear');
+  const incMonthEl = document.getElementById('incomeFilterMonth');
+  if (incYearEl && !incYearEl.dataset.bound) {
+    incYearEl.addEventListener('change', applyIncomeFilter);
+    incMonthEl.addEventListener('change', applyIncomeFilter);
+    incYearEl.dataset.bound = '1';
+  }
+  
+  const payToggle = document.getElementById('paymentFilterToggle');
+  const payPanel = document.getElementById('paymentFilterPanel');
+  if (payToggle && !payToggle.dataset.bound) {
+    payToggle.addEventListener('click', () => {
+      const isShown = payPanel.style.display === 'block';
+      payPanel.style.display = isShown ? 'none' : 'block';
+    });
+    payToggle.dataset.bound = '1';
+  }
+  
+  const payYearEl = document.getElementById('paymentFilterYear');
+  const payMonthEl = document.getElementById('paymentFilterMonth');
+  if (payYearEl && !payYearEl.dataset.bound) {
+    payYearEl.addEventListener('change', applyPaymentFilter);
+    payMonthEl.addEventListener('change', applyPaymentFilter);
+    payYearEl.dataset.bound = '1';
+  }
+}
+
+function applyIncomeFilter() {
+  const y = parseInt(document.getElementById('incomeFilterYear').value);
+  const m = document.getElementById('incomeFilterMonth').value;
+  incomeFilter.year = y;
+  incomeFilter.month = m === 'all' ? 'all' : parseInt(m);
+  renderAccounts();
+}
+window.applyIncomeFilter = applyIncomeFilter;
+
+function applyPaymentFilter() {
+  const y = parseInt(document.getElementById('paymentFilterYear').value);
+  const m = document.getElementById('paymentFilterMonth').value;
+  paymentFilter.year = y;
+  paymentFilter.month = m === 'all' ? 'all' : parseInt(m);
+  renderAccounts();
+}
+window.applyPaymentFilter = applyPaymentFilter;
+
+function clearIncomeFilter() {
+  incomeFilter = { year: null, month: null };
+  document.getElementById('incomeFilterPanel').style.display = 'none';
+  renderAccounts();
+}
+window.clearIncomeFilter = clearIncomeFilter;
+
+function clearPaymentFilter() {
+  paymentFilter = { year: null, month: null };
+  document.getElementById('paymentFilterPanel').style.display = 'none';
+  renderAccounts();
+}
+window.clearPaymentFilter = clearPaymentFilter;
 
 function renderCategoryBars() {
   const today = new Date();
@@ -1748,8 +1902,12 @@ function renderTrendChart() {
   });
 }
 
-let currentFilter = 'all';
+let currentFilter = 'thismonth';
 let currentCardFilter = 'all';
+let customFilterYear = null;
+let customFilterMonth = null;
+let incomeFilter = { year: null, month: null };
+let paymentFilter = { year: null, month: null };
 
 function renderCardFilters() {
   const container = document.getElementById('cardFilterChips');
@@ -1769,8 +1927,74 @@ function renderCardFilters() {
   });
 }
 
+function populateDateFilterDropdowns() {
+  // Yıllar: harcamalardan ve gelirlerden bul
+  const years = new Set();
+  const today = new Date();
+  years.add(today.getFullYear());
+  state.expenses.forEach(e => years.add(new Date(e.date).getFullYear()));
+  state.incomes.forEach(i => years.add(new Date(i.date).getFullYear()));
+  state.payments.forEach(p => years.add(new Date(p.date).getFullYear()));
+  
+  const yearsList = [...years].sort((a, b) => b - a);
+  const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  
+  const yearOptions = yearsList.map(y => `<option value="${y}">${y}</option>`).join('');
+  const monthOptions = '<option value="all">Tüm Aylar</option>' + months.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+  
+  // Harcamalar filtresi
+  const filterYearEl = document.getElementById('filterYear');
+  const filterMonthEl = document.getElementById('filterMonth');
+  if (filterYearEl) {
+    filterYearEl.innerHTML = yearOptions;
+    filterMonthEl.innerHTML = monthOptions;
+    filterYearEl.value = customFilterYear || today.getFullYear();
+    filterMonthEl.value = customFilterMonth || (today.getMonth() + 1);
+  }
+  
+  // Gelir filtresi
+  const incYearEl = document.getElementById('incomeFilterYear');
+  const incMonthEl = document.getElementById('incomeFilterMonth');
+  if (incYearEl) {
+    incYearEl.innerHTML = yearOptions;
+    incMonthEl.innerHTML = monthOptions;
+    if (incomeFilter.year) incYearEl.value = incomeFilter.year;
+    else incYearEl.value = today.getFullYear();
+    if (incomeFilter.month) incMonthEl.value = incomeFilter.month;
+    else incMonthEl.value = 'all';
+  }
+  
+  // Ödeme filtresi
+  const payYearEl = document.getElementById('paymentFilterYear');
+  const payMonthEl = document.getElementById('paymentFilterMonth');
+  if (payYearEl) {
+    payYearEl.innerHTML = yearOptions;
+    payMonthEl.innerHTML = monthOptions;
+    if (paymentFilter.year) payYearEl.value = paymentFilter.year;
+    else payYearEl.value = today.getFullYear();
+    if (paymentFilter.month) payMonthEl.value = paymentFilter.month;
+    else payMonthEl.value = 'all';
+  }
+}
+
+function applyDateFilter() {
+  customFilterYear = parseInt(document.getElementById('filterYear').value);
+  const monthVal = document.getElementById('filterMonth').value;
+  customFilterMonth = monthVal === 'all' ? 'all' : parseInt(monthVal);
+  currentFilter = 'custom';
+  renderExpenses();
+}
+window.applyDateFilter = applyDateFilter;
+
 function renderExpenses() {
+  populateDateFilterDropdowns();
   renderCardFilters();
+  
+  // Tarih filtre panelini göster/gizle
+  const datePanel = document.getElementById('dateFilterPanel');
+  if (currentFilter === 'custom') datePanel.style.display = 'block';
+  else datePanel.style.display = 'none';
+  
   const list = document.getElementById('expenseList');
   list.innerHTML = '';
   let filtered = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1778,22 +2002,48 @@ function renderExpenses() {
   const thisMonthKey = getMonthKey(today);
   const lastMonthKey = getMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
   
-  if (currentFilter === 'thismonth') filtered = filtered.filter(e => getExpenseMonth(e) === thisMonthKey);
-  else if (currentFilter === 'lastmonth') filtered = filtered.filter(e => getExpenseMonth(e) === lastMonthKey);
-  else if (currentFilter === 'taksit') filtered = filtered.filter(e => e.taksit > 1);
-  
-  if (currentCardFilter !== 'all') filtered = filtered.filter(e => e.cardId === currentCardFilter);
-  
-  if (filtered.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Bu kriterlere uyan harcama yok</div></div>'; return; }
-  
-  // Toplam tutar göster (filtre uygulanmışsa)
-  if (currentFilter !== 'all' || currentCardFilter !== 'all') {
-    const total = filtered.reduce((sum, e) => sum + e.amount, 0);
-    list.innerHTML += `<div style="padding: 14px 18px; background: var(--bg-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-      <span style="font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Filtreli Toplam (${filtered.length} işlem)</span>
-      <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent); font-size: 15px;">${formatCurrency(total)}</span>
-    </div>`;
+  let filterTitle = '';
+  if (currentFilter === 'thismonth') {
+    filtered = filtered.filter(e => getExpenseMonth(e) === thisMonthKey);
+    filterTitle = today.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  } else if (currentFilter === 'lastmonth') {
+    filtered = filtered.filter(e => getExpenseMonth(e) === lastMonthKey);
+    const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    filterTitle = lm.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  } else if (currentFilter === 'taksit') {
+    filtered = filtered.filter(e => e.taksit > 1);
+    filterTitle = 'Taksitli işlemler';
+  } else if (currentFilter === 'custom' && customFilterYear) {
+    if (customFilterMonth === 'all') {
+      filtered = filtered.filter(e => new Date(e.date).getFullYear() === customFilterYear);
+      filterTitle = customFilterYear + ' yılı';
+    } else {
+      filtered = filtered.filter(e => {
+        const d = new Date(e.date);
+        return d.getFullYear() === customFilterYear && (d.getMonth() + 1) === customFilterMonth;
+      });
+      const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+      filterTitle = months[customFilterMonth - 1] + ' ' + customFilterYear;
+    }
   }
+  
+  if (currentCardFilter !== 'all') {
+    filtered = filtered.filter(e => e.cardId === currentCardFilter);
+    const card = state.cards.find(c => c.id === currentCardFilter);
+    if (card) filterTitle = (filterTitle ? filterTitle + ' • ' : '') + card.name;
+  }
+  
+  if (filtered.length === 0) { 
+    list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Bu kriterlere uyan harcama yok</div></div>'; 
+    return; 
+  }
+  
+  // Toplam tutar
+  const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+  list.innerHTML += `<div style="padding: 14px 18px; background: var(--bg-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">${filterTitle} (${filtered.length} işlem)</span>
+    <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent); font-size: 15px;">${formatCurrency(total)}</span>
+  </div>`;
   
   filtered.forEach(e => {
     const card = state.cards.find(c => c.id === e.cardId);
@@ -2024,8 +2274,56 @@ function renderHealthScore(balance, currentDebt, avgSpending, upcomingDebt) {
 function calculate12MonthProjection(startBalance, avgIncome, avgSpending) {
   const today = new Date();
   const projection = [];
-  let runningBalance = startBalance;
   
+  // Önce geçmiş 3 ayı hesapla (gerçek veriden)
+  const pastMonths = [];
+  for (let i = 3; i >= 1; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const key = getMonthKey(d);
+    
+    // O ayın gerçek harcamaları
+    let actualSpending = 0;
+    state.expenses.forEach(e => { if (getExpenseMonth(e) === key) actualSpending += e.amount; });
+    
+    // O ayın gerçek gelirleri
+    let actualIncome = 0;
+    state.incomes.forEach(inc => { if (getMonthKey(new Date(inc.date)) === key) actualIncome += inc.amount; });
+    
+    // O ayın yapılan ödemeleri
+    let actualPayments = 0;
+    state.payments.forEach(p => { 
+      if (getMonthKey(new Date(p.date)) === key) actualPayments += p.amount; 
+    });
+    
+    pastMonths.push({
+      month: d,
+      monthKey: key,
+      actualIncome,
+      actualSpending,
+      actualPayments,
+      isPast: true
+    });
+  }
+  
+  // Geçmiş ayları ekle (bilgi amaçlı, bakiye hesabına dahil etme)
+  pastMonths.forEach(pm => {
+    projection.push({
+      month: pm.month,
+      monthKey: pm.monthKey,
+      startBalance: 0,
+      income: pm.actualIncome,
+      cardDebt: pm.actualPayments,
+      pastDebt: 0,
+      otherSpending: 0,
+      endBalance: 0,
+      isCurrent: false,
+      isPast: true,
+      actualSpending: pm.actualSpending
+    });
+  });
+  
+  // Bu ay ve gelecek 12 ay
+  let runningBalance = startBalance;
   for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const key = getMonthKey(d);
@@ -2052,12 +2350,10 @@ function calculate12MonthProjection(startBalance, avgIncome, avgSpending) {
       }
     }
     
-    // Tahmini gelir ve ek harcama (kart dışı)
-    const expectedIncome = i === 0 ? 0 : avgIncome;  // Bu ayın gelirleri zaten hesaba ekli
-    const otherSpending = i === 0 ? 0 : avgSpending - cardDebt;  // Kart dışı tahmini
-    const cleanOtherSpending = Math.max(0, otherSpending);
+    const expectedIncome = i === 0 ? 0 : avgIncome;
+    const otherSpending = i === 0 ? 0 : Math.max(0, avgSpending - cardDebt);
     
-    const monthBalance = runningBalance + expectedIncome - cardDebt - pastDebt - cleanOtherSpending;
+    const monthBalance = runningBalance + expectedIncome - cardDebt - pastDebt - otherSpending;
     
     projection.push({
       month: d,
@@ -2066,9 +2362,10 @@ function calculate12MonthProjection(startBalance, avgIncome, avgSpending) {
       income: expectedIncome,
       cardDebt,
       pastDebt,
-      otherSpending: cleanOtherSpending,
+      otherSpending,
       endBalance: monthBalance,
-      isCurrent: i === 0
+      isCurrent: i === 0,
+      isPast: false
     });
     
     runningBalance = monthBalance;
@@ -2083,7 +2380,8 @@ function renderProjectionTable(projection) {
   
   projection.forEach((p, idx) => {
     let cssClass = '';
-    if (p.isCurrent) cssClass = 'current';
+    if (p.isPast) cssClass = 'past';
+    else if (p.isCurrent) cssClass = 'current';
     else if (p.endBalance < 0) cssClass = 'negative';
     else if (p.endBalance < (p.cardDebt || 1000)) cssClass = 'warning';
     else cssClass = 'good';
@@ -2091,8 +2389,31 @@ function renderProjectionTable(projection) {
     const monthLabel = p.month.toLocaleDateString('tr-TR', { month: 'short' });
     const yearLabel = p.month.getFullYear().toString().slice(-2);
     
+    if (p.isPast) {
+      // Geçmiş ay görünümü: gerçek veri
+      const flowParts = [];
+      if (p.income > 0) flowParts.push(`<span class="income">+${formatCurrency(p.income)}</span>`);
+      if (p.cardDebt > 0) flowParts.push(`<span class="out">💳-${formatCurrency(p.cardDebt)}</span>`);
+      if (p.actualSpending > 0) flowParts.push(`<span style="color:var(--text-mute)">📋${formatCurrency(p.actualSpending)}</span>`);
+      
+      container.innerHTML += `
+        <div class="forecast-row past" onclick="toggleForecastDetail(${idx})">
+          <div class="forecast-month" style="color:var(--text-mute);">${monthLabel}<span class="yr">20${yearLabel}</span></div>
+          <div class="forecast-flow">${flowParts.join('') || '<span style="color:var(--text-mute)">Veri yok</span>'}</div>
+          <div class="forecast-balance" style="color:var(--text-dim); font-size:11px;">GEÇMİŞ</div>
+        </div>
+        <div class="forecast-detail-modal" id="forecastDetail-${idx}">
+          <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Gerçek Veriler</div>
+          ${p.income > 0 ? `<div class="detail-row"><span class="lbl">Gelen Gelir</span><span class="val green">+${formatCurrency(p.income)}</span></div>` : ''}
+          ${p.actualSpending > 0 ? `<div class="detail-row"><span class="lbl">Yapılan Harcama</span><span class="val orange">${formatCurrency(p.actualSpending)}</span></div>` : ''}
+          ${p.cardDebt > 0 ? `<div class="detail-row"><span class="lbl">Yapılan Kart Ödemesi</span><span class="val orange">-${formatCurrency(p.cardDebt)}</span></div>` : ''}
+          ${(p.income === 0 && p.actualSpending === 0 && p.cardDebt === 0) ? `<div class="detail-row"><span class="lbl">Bu ay için veri yok</span></div>` : ''}
+        </div>`;
+      return;
+    }
+    
     const flowParts = [];
-    if (p.income > 0) flowParts.push(`<span class="income">+${formatCurrency(p.income).replace('₺','₺')}</span>`);
+    if (p.income > 0) flowParts.push(`<span class="income">+${formatCurrency(p.income)}</span>`);
     if (p.cardDebt > 0) flowParts.push(`<span class="out">💳-${formatCurrency(p.cardDebt)}</span>`);
     if (p.pastDebt > 0) flowParts.push(`<span class="out">⚠️-${formatCurrency(p.pastDebt)}</span>`);
     if (p.otherSpending > 0) flowParts.push(`<span class="out">-${formatCurrency(p.otherSpending)}</span>`);
@@ -2121,8 +2442,10 @@ function toggleForecastDetail(idx) {
 window.toggleForecastDetail = toggleForecastDetail;
 
 function renderBalanceForecastChart(projection) {
-  const labels = projection.map(p => p.month.toLocaleDateString('tr-TR', { month: 'short' }));
-  const data = projection.map(p => p.endBalance);
+  // Sadece gelecek ayları göster (geçmişler bakiye olarak 0, çizgide tuhaf görünür)
+  const futureProjection = projection.filter(p => !p.isPast);
+  const labels = futureProjection.map(p => p.month.toLocaleDateString('tr-TR', { month: 'short' }));
+  const data = futureProjection.map(p => p.endBalance);
   const colors = data.map(v => v < 0 ? '#f87171' : (v < 10000 ? '#fb923c' : '#34d399'));
   
   const ctx = document.getElementById('balanceForecastChart').getContext('2d');
@@ -2176,8 +2499,11 @@ function renderWarnings(projection, balance, thisDebt, avgSpending, avgIncome) {
   container.innerHTML = '';
   const warnings = [];
   
+  // Sadece gelecek ayları kontrol et
+  const futureProjection = projection.filter(p => !p.isPast);
+  
   // Negatife düşen aylar
-  const negativeMonths = projection.filter(p => p.endBalance < 0 && !p.isCurrent);
+  const negativeMonths = futureProjection.filter(p => p.endBalance < 0 && !p.isCurrent);
   if (negativeMonths.length > 0) {
     const firstNeg = negativeMonths[0];
     warnings.push({
