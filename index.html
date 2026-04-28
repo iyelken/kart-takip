@@ -511,6 +511,96 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .detail-row .val.green { color: var(--success); }
 .detail-row .val.orange { color: var(--warning); }
 .detail-row .val.red { color: var(--danger); }
+
+/* === AKTİF TAKSİT KARTLARI === */
+.taksit-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.taksit-card.last-month { 
+  border-color: var(--success); 
+  background: linear-gradient(135deg, rgba(52,211,153,0.08), rgba(45,212,191,0.04));
+}
+.taksit-card.last-month::before {
+  content: '🎉 BU AY SON!';
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--success);
+  color: #0a0e1a;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 0 14px 0 10px;
+  letter-spacing: 0.05em;
+}
+
+.taksit-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 10px; }
+.taksit-info { flex: 1; min-width: 0; }
+.taksit-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.taksit-meta { font-size: 11px; color: var(--text-dim); display: flex; gap: 8px; flex-wrap: wrap; }
+.taksit-meta span { white-space: nowrap; }
+
+.taksit-progress-section {
+  margin-bottom: 10px;
+}
+.taksit-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.taksit-progress-label { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+.taksit-progress-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+
+.taksit-progress-bar {
+  height: 8px;
+  background: var(--surface);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.taksit-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 4px;
+  transition: width 0.5s;
+}
+.taksit-card.last-month .taksit-progress-fill {
+  background: linear-gradient(90deg, var(--success), var(--teal));
+}
+
+.taksit-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.taksit-stat-item { text-align: center; }
+.taksit-stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.taksit-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; margin-top: 2px; }
+
+/* Taksit badge for expense list */
+.taksit-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(245,158,11,0.15);
+  color: var(--accent);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: 4px;
+}
+.taksit-badge.last { background: var(--success); color: #0a0e1a; }
+.taksit-badge.completed { background: var(--surface-2); color: var(--text-mute); }
 </style>
 </head>
 <body>
@@ -586,10 +676,10 @@ input:focus, select:focus, textarea:focus { outline: none; }
           <div class="stat-value" id="stat-lastmonth">₺0</div>
           <div class="stat-meta" id="stat-trend">—</div>
         </div>
-        <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--pink), var(--warning));">
+        <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--pink), var(--warning)); cursor:pointer;" onclick="openActiveTaksitsModal()">
           <div class="stat-label">Aktif Taksit</div>
           <div class="stat-value" id="stat-taksit">0</div>
-          <div class="stat-meta">işlem</div>
+          <div class="stat-meta" id="stat-taksit-meta">işlem • Detay için tıkla</div>
         </div>
       </div>
 
@@ -664,6 +754,16 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <div class="section">
         <div class="section-body" style="padding-top:16px;">
           <div class="account-grid" id="allAccounts"></div>
+        </div>
+      </div>
+
+      <div class="section" id="activeTaksitsSection">
+        <div class="section-header">
+          <div class="section-title">📋 Aktif Taksitler</div>
+          <span class="section-action" id="activeTaksitsCount" style="cursor:default;">-</span>
+        </div>
+        <div class="section-body">
+          <div id="activeTaksitsHomeList"></div>
         </div>
       </div>
 
@@ -769,9 +869,9 @@ input:focus, select:focus, textarea:focus { outline: none; }
           <div class="stat-meta" id="surviveDetail">Gelir olmasa bile</div>
         </div>
         <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--purple), var(--pink));">
-          <div class="stat-label">Aylık Ortalama</div>
+          <div class="stat-label">Aylık Ortalama Ödeme</div>
           <div class="stat-value" id="avgSpending">₺0</div>
-          <div class="stat-meta">Son 6 ay harcama</div>
+          <div class="stat-meta">Son 6 ay (taksitli)</div>
         </div>
       </div>
 
@@ -1053,6 +1153,19 @@ input:focus, select:focus, textarea:focus { outline: none; }
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('undoPaymentModal')">İptal</button>
       <button class="btn btn-danger" onclick="confirmUndoPayment()">Ödemeyi Geri Al</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVE TAKSITS MODAL -->
+<div class="modal-overlay" id="activeTaksitsModal">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title">📋 Aktif Taksitlerim</h2>
+    <p class="modal-subtitle" id="activeTaksitsSubtitle">Devam eden taksitli ödemelerin</p>
+    <div id="activeTaksitsList"></div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-secondary btn-block" onclick="closeModal('activeTaksitsModal')">Kapat</button>
     </div>
   </div>
 </div>
@@ -1486,6 +1599,149 @@ function getCardPaymentCount(cardId, paymentMonth) {
   return count;
 }
 
+// Aktif taksitli harcamaları listele - her biri için detaylı bilgi
+function getActiveTaksits() {
+  const today = new Date();
+  const currentMonthKey = getMonthKey(today);
+  const result = [];
+  
+  state.expenses.forEach(e => {
+    if (e.taksit <= 1) return;
+    
+    const schedule = getPaymentSchedule(e);
+    if (schedule.length === 0) return;
+    
+    // Tüm taksitler geçmişte mi? (bittiyse listeleme)
+    const lastTaksitMonth = schedule[schedule.length - 1].month;
+    if (lastTaksitMonth < currentMonthKey) return;
+    
+    // Hangi taksitteyim?
+    let currentTaksitNo = 0;
+    let nextTaksitMonth = null;
+    let nextTaksitAmount = 0;
+    let isLastTaksitThisMonth = false;
+    
+    schedule.forEach(s => {
+      if (s.month <= currentMonthKey) {
+        currentTaksitNo = s.taksitNo;
+      }
+      if (s.month >= currentMonthKey && !nextTaksitMonth) {
+        nextTaksitMonth = s.month;
+        nextTaksitAmount = s.amount;
+      }
+    });
+    
+    // Bu ay son taksit mi?
+    isLastTaksitThisMonth = (lastTaksitMonth === currentMonthKey);
+    
+    // Kaç taksit kaldı?
+    const remainingTaksits = e.taksit - currentTaksitNo;
+    const remainingAmount = remainingTaksits * (e.amount / e.taksit);
+    const monthlyAmount = e.amount / e.taksit;
+    const progressPct = (currentTaksitNo / e.taksit) * 100;
+    
+    result.push({
+      expense: e,
+      totalTaksit: e.taksit,
+      currentTaksitNo, // 0 = henüz başlamadı, 1 = ilk taksit
+      remainingTaksits,
+      monthlyAmount,
+      remainingAmount,
+      progressPct,
+      lastMonth: lastTaksitMonth,
+      nextMonth: nextTaksitMonth,
+      isLastThisMonth: isLastTaksitThisMonth,
+      schedule
+    });
+  });
+  
+  // Sırala: son taksit ayı yakın olanlar üstte
+  result.sort((a, b) => {
+    if (a.isLastThisMonth && !b.isLastThisMonth) return -1;
+    if (!a.isLastThisMonth && b.isLastThisMonth) return 1;
+    return a.lastMonth.localeCompare(b.lastMonth);
+  });
+  
+  return result;
+}
+
+// === AKTİF TAKSİTLER ===
+function openActiveTaksitsModal() {
+  renderActiveTaksitsList(document.getElementById('activeTaksitsList'));
+  const taksits = getActiveTaksits();
+  const totalRemaining = taksits.reduce((sum, t) => sum + t.remainingAmount, 0);
+  const subtitle = taksits.length === 0 
+    ? 'Aktif taksitin yok'
+    : `${taksits.length} aktif taksit • Toplam kalan: ${formatCurrency(totalRemaining)}`;
+  document.getElementById('activeTaksitsSubtitle').textContent = subtitle;
+  openModal('activeTaksitsModal');
+}
+window.openActiveTaksitsModal = openActiveTaksitsModal;
+
+function renderActiveTaksitsList(container) {
+  if (!container) return;
+  const taksits = getActiveTaksits();
+  
+  if (taksits.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="icon">✨</div><div class="text">Aktif taksitin yok!</div></div>';
+    return;
+  }
+  
+  let html = '';
+  taksits.forEach(t => {
+    const card = state.cards.find(c => c.id === t.expense.cardId);
+    const cat = state.categories.find(c => c.id === t.expense.categoryId);
+    const cardTitle = t.expense.desc || (cat ? cat.name : 'Harcama');
+    const isLast = t.isLastThisMonth;
+    
+    const lastMonthDate = new Date(t.lastMonth + '-01');
+    const lastMonthLabel = lastMonthDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    
+    html += `
+      <div class="taksit-card ${isLast ? 'last-month' : ''}" onclick="closeModal('activeTaksitsModal'); editExpense('${t.expense.id}')" style="cursor:pointer;">
+        <div class="taksit-header">
+          <div class="taksit-info">
+            <div class="taksit-title">${cat ? cat.icon : '💸'} ${cardTitle}</div>
+            <div class="taksit-meta">
+              <span>${card ? card.name : '?'}</span>
+              <span>•</span>
+              <span>${cat ? cat.name : '?'}</span>
+              <span>•</span>
+              <span>${formatCurrency(t.expense.amount)} toplam</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="taksit-progress-section">
+          <div class="taksit-progress-row">
+            <span class="taksit-progress-label">İlerleme: ${t.currentTaksitNo}/${t.totalTaksit} taksit</span>
+            <span class="taksit-progress-value">%${Math.round(t.progressPct)}</span>
+          </div>
+          <div class="taksit-progress-bar">
+            <div class="taksit-progress-fill" style="width: ${t.progressPct}%"></div>
+          </div>
+        </div>
+        
+        <div class="taksit-stats">
+          <div class="taksit-stat-item">
+            <div class="taksit-stat-label">Aylık</div>
+            <div class="taksit-stat-value">${formatCurrency(t.monthlyAmount)}</div>
+          </div>
+          <div class="taksit-stat-item">
+            <div class="taksit-stat-label">Kalan</div>
+            <div class="taksit-stat-value" style="color: var(--warning);">${formatCurrency(t.remainingAmount)}</div>
+          </div>
+          <div class="taksit-stat-item">
+            <div class="taksit-stat-label">Bitiş</div>
+            <div class="taksit-stat-value" style="font-size: 11px;">${lastMonthLabel}</div>
+          </div>
+        </div>
+      </div>`;
+  });
+  
+  container.innerHTML = html;
+}
+
 // Bir kart-ay kombinasyonu ödendi mi?
 function isPaymentMade(cardId, paymentMonth) {
   return state.payments.find(p => p.cardId === cardId && p.paymentMonth === paymentMonth);
@@ -1566,7 +1822,24 @@ function renderHome() {
     else trendEl.innerHTML = '<span style="color:var(--success)">📉 ' + diff.toFixed(0) + '%</span>';
   } else trendEl.textContent = '—';
 
-  document.getElementById('stat-taksit').textContent = state.expenses.filter(e => e.taksit > 1).length;
+  const activeTaksits = getActiveTaksits();
+  document.getElementById('stat-taksit').textContent = activeTaksits.length;
+  
+  // Bu ay biten varsa göster
+  const endingThisMonth = activeTaksits.filter(t => t.isLastThisMonth).length;
+  const taksitMetaEl = document.getElementById('stat-taksit-meta');
+  if (taksitMetaEl) {
+    if (endingThisMonth > 0) {
+      taksitMetaEl.innerHTML = `🎉 ${endingThisMonth} taksit bu ay bitiyor!`;
+      taksitMetaEl.style.color = 'var(--success)';
+    } else if (activeTaksits.length > 0) {
+      taksitMetaEl.innerHTML = 'işlem • Detay için tıkla';
+      taksitMetaEl.style.color = '';
+    } else {
+      taksitMetaEl.textContent = 'Taksit yok';
+      taksitMetaEl.style.color = '';
+    }
+  }
 
   renderUpcomingPayments();
   renderHomeAccounts();
@@ -1711,6 +1984,21 @@ function renderAccounts() {
   document.getElementById('monthIncome').textContent = formatCurrency(monthIncome);
   
   populateDateFilterDropdowns();
+
+  // Aktif Taksitler
+  const taksits = getActiveTaksits();
+  const taksitCountEl = document.getElementById('activeTaksitsCount');
+  if (taksitCountEl) {
+    if (taksits.length === 0) {
+      taksitCountEl.textContent = 'Yok';
+      taksitCountEl.style.color = 'var(--text-mute)';
+    } else {
+      const totalRemaining = taksits.reduce((sum, t) => sum + t.remainingAmount, 0);
+      taksitCountEl.innerHTML = `${taksits.length} aktif • ${formatCurrency(totalRemaining)} kalan`;
+      taksitCountEl.style.color = 'var(--accent)';
+    }
+  }
+  renderActiveTaksitsList(document.getElementById('activeTaksitsHomeList'));
 
   // Tüm hesaplar
   const list = document.getElementById('allAccounts');
@@ -2226,7 +2514,41 @@ function renderExpenses() {
   filtered.forEach(e => {
     const card = state.cards.find(c => c.id === e.cardId);
     const cat = state.categories.find(c => c.id === e.categoryId);
-    list.innerHTML += `<div class="expense-item" onclick="editExpense('${e.id}')"><div class="expense-icon">${cat ? cat.icon : '💸'}</div><div class="expense-info"><div class="desc">${e.desc || (cat ? cat.name : 'Harcama')}</div><div class="meta">${formatDate(e.date)} • ${card ? card.name : '?'} • ${cat ? cat.name : '?'}</div></div><div class="expense-amount">${formatCurrency(e.amount)}${e.taksit > 1 ? `<span class="taksit">${e.taksit} taksit</span>` : ''}</div></div>`;
+    
+    // Taksit bilgisi (varsa)
+    let taksitInfo = '';
+    if (e.taksit > 1) {
+      const today = new Date();
+      const currentMonthKey = getMonthKey(today);
+      const schedule = getPaymentSchedule(e);
+      
+      // Şu anda kaçıncı taksitteyiz?
+      let currentTaksitNo = 0;
+      schedule.forEach(s => {
+        if (s.month <= currentMonthKey) currentTaksitNo = s.taksitNo;
+      });
+      
+      const lastMonth = schedule[schedule.length - 1].month;
+      const isCompleted = lastMonth < currentMonthKey;
+      const isLastThisMonth = lastMonth === currentMonthKey;
+      
+      let badgeClass = '';
+      let badgeText = '';
+      
+      if (isCompleted) {
+        badgeClass = 'completed';
+        badgeText = `✓ ${e.taksit}/${e.taksit}`;
+      } else if (isLastThisMonth) {
+        badgeClass = 'last';
+        badgeText = `🎉 Son! ${currentTaksitNo}/${e.taksit}`;
+      } else {
+        badgeText = `${currentTaksitNo}/${e.taksit} taksit`;
+      }
+      
+      taksitInfo = `<span class="taksit-badge ${badgeClass}">${badgeText}</span>`;
+    }
+    
+    list.innerHTML += `<div class="expense-item" onclick="editExpense('${e.id}')"><div class="expense-icon">${cat ? cat.icon : '💸'}</div><div class="expense-info"><div class="desc">${e.desc || (cat ? cat.name : 'Harcama')}</div><div class="meta">${formatDate(e.date)} • ${card ? card.name : '?'} • ${cat ? cat.name : '?'} ${taksitInfo}</div></div><div class="expense-amount">${formatCurrency(e.amount)}${e.taksit > 1 ? `<span class="taksit">Aylık ${formatCurrency(e.amount / e.taksit)}</span>` : ''}</div></div>`;
   });
 }
 
@@ -2328,20 +2650,24 @@ function renderForecast() {
   const today = new Date();
   const totalBalance = getTotalBalance();
   
-  // Son 6 ay ortalama harcama (kart harcaması)
-  let totalSpending6Month = 0;
+  // Son 6 ay ortalama harcama (taksitler aylara dağıtılmış - gerçek aylık yük)
+  let totalPayment6Month = 0;
   let monthsWithData = 0;
   for (let i = 1; i <= 6; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const key = getMonthKey(d);
     let monthTotal = 0;
-    state.expenses.forEach(e => { if (getExpenseMonth(e) === key) monthTotal += e.amount; });
+    // Her harcamanın o aya düşen taksit payını topla
+    state.expenses.forEach(e => {
+      const schedule = getPaymentSchedule(e);
+      schedule.forEach(s => { if (s.month === key) monthTotal += s.amount; });
+    });
     if (monthTotal > 0) {
-      totalSpending6Month += monthTotal;
+      totalPayment6Month += monthTotal;
       monthsWithData++;
     }
   }
-  const avgMonthlySpending = monthsWithData > 0 ? totalSpending6Month / monthsWithData : 0;
+  const avgMonthlySpending = monthsWithData > 0 ? totalPayment6Month / monthsWithData : 0;
   
   // Son 6 ay ortalama gelir
   let totalIncome6Month = 0;
@@ -2529,7 +2855,18 @@ function calculate12MonthProjection(startBalance, avgIncome, avgSpending) {
     }
     
     const expectedIncome = i === 0 ? 0 : avgIncome;
-    const otherSpending = i === 0 ? 0 : Math.max(0, avgSpending - cardDebt);
+    // avgSpending = geçmiş 6 ay ortalama aylık ödeme yükü (taksitler dağılmış)
+    // cardDebt = bu ayın gerçek bilinen kart yükü
+    // Eğer avgSpending > cardDebt ise: Geçmişte daha fazla harcardık, demek ki bu ay henüz girmediğimiz harcamalar olabilir
+    // Bu farkı "tahmini ek harcama" olarak ekleyelim (sadece bu ay için, gelecek aylar için aşağıda farklı)
+    let otherSpending = 0;
+    if (i === 0) {
+      // Bu ay: gerçek veriler kullan, tahmin ekleme
+      otherSpending = 0;
+    } else {
+      // Gelecek aylar: ortalama yük - bilinen kart borcu = ek harcama tahmini
+      otherSpending = Math.max(0, avgSpending - cardDebt);
+    }
     
     const monthBalance = runningBalance + expectedIncome - cardDebt - pastDebt - otherSpending;
     
