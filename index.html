@@ -264,7 +264,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .cat-bar { height: 6px; background: var(--bg-2); border-radius: 3px; overflow: hidden; }
 .cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
 
-.cat-view-btn, .trend-view-btn {
+.cat-view-btn, .trend-view-btn, .budget-mode-btn {
   background: transparent;
   color: var(--text-dim);
   border: none;
@@ -272,7 +272,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
   white-space: nowrap;
   transition: all 0.2s;
 }
-.cat-view-btn.active, .trend-view-btn.active {
+.cat-view-btn.active, .trend-view-btn.active, .budget-mode-btn.active {
   background: var(--accent);
   color: #0a0e1a;
 }
@@ -852,6 +852,41 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <h1 class="page-title">Tahmin</h1>
       <p class="page-subtitle">Geleceğe yönelik finansal projeksiyon</p>
 
+      <!-- Bütçe Modu -->
+      <div class="section" style="margin-bottom: 16px;">
+        <div class="section-body" style="padding-top:16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <div style="font-weight: 700; font-size: 14px;">⚙️ Bütçe Modu</div>
+              <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;" id="budgetModeStatus">Otomatik (geçmiş veriden)</div>
+            </div>
+            <div style="display:flex; background:var(--bg-2); border-radius:10px; padding:3px; gap:2px;">
+              <button class="budget-mode-btn" data-mode="auto" id="modeAutoBtn" style="padding:8px 12px; border-radius:8px; font-size:11px; font-weight:600;">🤖 Otomatik</button>
+              <button class="budget-mode-btn" data-mode="manual" id="modeManualBtn" style="padding:8px 12px; border-radius:8px; font-size:11px; font-weight:600;">✏️ Manuel</button>
+            </div>
+          </div>
+          
+          <div id="manualBudgetPanel" style="display:none; background: var(--bg-2); padding: 14px; border-radius: 10px; margin-top: 10px;">
+            <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.5;">💡 Aylık tahmini gider ve gelirini gir. Henüz çok fazla geçmiş verin yokken bu daha gerçekçi sonuçlar verir. Daha sonra "Otomatik"e geçebilirsin.</p>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1;">
+                <label class="form-label">Aylık Tahmini Gider</label>
+                <input type="number" class="form-input" id="manualBudgetInput" placeholder="15000" step="100">
+              </div>
+              <div style="flex: 1;">
+                <label class="form-label">Aylık Tahmini Gelir</label>
+                <input type="number" class="form-input" id="manualIncomeInput" placeholder="20000" step="100">
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="saveManualBudget()" style="margin-top: 12px;">Kaydet</button>
+          </div>
+          
+          <div id="autoModeInfo" style="display:none; background: rgba(96,165,250,0.08); padding: 12px; border-radius: 10px; margin-top: 10px; border: 1px solid rgba(96,165,250,0.2);">
+            <p style="font-size: 12px; color: var(--text-dim); line-height: 1.5;" id="autoInfoText">📊 Sistem geçmiş aylarını otomatik analiz eder.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Sağlık Skoru -->
       <div class="health-card" id="healthCard">
         <div class="health-icon" id="healthIcon">❓</div>
@@ -1224,6 +1259,9 @@ let state = {
   incomes: [],
   incomeSources: [],
   payments: [], // { id, cardId, paymentMonth (YYYY-MM), accountId, amount, date }
+  budgetMode: 'auto', // 'auto' = otomatik hesap, 'manual' = manuel
+  manualBudget: 0, // Manuel girilen aylık bütçe (TL)
+  manualIncome: 0, // Manuel girilen aylık gelir (TL)
   lastUpdated: 0
 };
 let currentPassword = null;
@@ -1441,6 +1479,9 @@ function migrateState(data) {
   if (!data.incomes) data.incomes = [];
   if (!data.incomeSources) data.incomeSources = [...DEFAULT_INCOME_SOURCES];
   if (!data.payments) data.payments = [];
+  if (!data.budgetMode) data.budgetMode = 'auto';
+  if (data.manualBudget === undefined) data.manualBudget = 0;
+  if (data.manualIncome === undefined) data.manualIncome = 0;
   return data;
 }
 
@@ -2646,42 +2687,221 @@ function renderForecastChart() {
 // === TAHMİN / FORECAST PAGE ===
 let balanceForecastChart = null;
 
+// Bütçe modu UI yönetimi
+function setupBudgetModeUI() {
+  const autoBtn = document.getElementById('modeAutoBtn');
+  const manualBtn = document.getElementById('modeManualBtn');
+  const manualPanel = document.getElementById('manualBudgetPanel');
+  const autoInfo = document.getElementById('autoModeInfo');
+  const statusEl = document.getElementById('budgetModeStatus');
+  
+  if (!autoBtn) return;
+  
+  // Aktif modu işaretle
+  if (state.budgetMode === 'manual') {
+    autoBtn.classList.remove('active');
+    manualBtn.classList.add('active');
+    if (manualPanel) manualPanel.style.display = 'block';
+    if (autoInfo) autoInfo.style.display = 'none';
+    if (statusEl) statusEl.textContent = 'Manuel girilen değerler kullanılıyor';
+    
+    // Mevcut değerleri yükle
+    const budgetInput = document.getElementById('manualBudgetInput');
+    const incomeInput = document.getElementById('manualIncomeInput');
+    if (budgetInput && !budgetInput.dataset.touched) {
+      budgetInput.value = state.manualBudget || '';
+    }
+    if (incomeInput && !incomeInput.dataset.touched) {
+      incomeInput.value = state.manualIncome || '';
+    }
+  } else {
+    autoBtn.classList.add('active');
+    manualBtn.classList.remove('active');
+    if (manualPanel) manualPanel.style.display = 'none';
+    if (autoInfo) autoInfo.style.display = 'block';
+    
+    // Auto info text güncelle
+    const today = new Date();
+    let monthsWithData = 0;
+    for (let i = 1; i <= 6; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = getMonthKey(d);
+      let monthTotal = 0;
+      state.expenses.forEach(e => {
+        const schedule = getPaymentSchedule(e);
+        schedule.forEach(s => { if (s.month === key) monthTotal += s.amount; });
+      });
+      if (monthTotal > 0) monthsWithData++;
+    }
+    
+    const autoInfoText = document.getElementById('autoInfoText');
+    if (autoInfoText) {
+      if (monthsWithData >= 3) {
+        autoInfoText.innerHTML = `📊 <strong>${monthsWithData} aylık geçmiş veri</strong> kullanılıyor. Tahminler güvenilir.`;
+      } else if (monthsWithData > 0) {
+        autoInfoText.innerHTML = `🔮 Henüz <strong>${monthsWithData} aylık veri</strong> var (3+ ideal). Şimdilik gelecek taksit projeksiyonu kullanılıyor. Daha gerçekçi tahminler için <strong>Manuel mod</strong> önerilir.`;
+      } else {
+        autoInfoText.innerHTML = `⚠️ Henüz geçmiş veri yok. <strong>Manuel mod</strong>'a geçip tahmini bütçeni girersen daha gerçekçi sonuçlar alırsın.`;
+      }
+    }
+    if (statusEl) {
+      statusEl.textContent = monthsWithData >= 3 
+        ? `Otomatik (${monthsWithData} aylık geçmiş)` 
+        : 'Otomatik (gelecek projeksiyonu)';
+    }
+  }
+  
+  // Buton bağlantıları (sadece bir kez)
+  if (!autoBtn.dataset.bound) {
+    autoBtn.addEventListener('click', () => {
+      state.budgetMode = 'auto';
+      saveState();
+      renderForecast();
+    });
+    autoBtn.dataset.bound = '1';
+  }
+  if (!manualBtn.dataset.bound) {
+    manualBtn.addEventListener('click', () => {
+      state.budgetMode = 'manual';
+      saveState();
+      renderForecast();
+    });
+    manualBtn.dataset.bound = '1';
+  }
+  
+  // Input touch tracking
+  const budgetInput = document.getElementById('manualBudgetInput');
+  const incomeInput = document.getElementById('manualIncomeInput');
+  if (budgetInput && !budgetInput.dataset.bound) {
+    budgetInput.addEventListener('input', () => budgetInput.dataset.touched = '1');
+    budgetInput.dataset.bound = '1';
+  }
+  if (incomeInput && !incomeInput.dataset.bound) {
+    incomeInput.addEventListener('input', () => incomeInput.dataset.touched = '1');
+    incomeInput.dataset.bound = '1';
+  }
+}
+
+async function saveManualBudget() {
+  const budget = parseFloat(document.getElementById('manualBudgetInput').value) || 0;
+  const income = parseFloat(document.getElementById('manualIncomeInput').value) || 0;
+  if (budget < 0 || income < 0) { showToast('Negatif değer giremezsin', 'error'); return; }
+  state.manualBudget = budget;
+  state.manualIncome = income;
+  // Touch flag'leri temizle ki yeniden yüklesin
+  document.getElementById('manualBudgetInput').dataset.touched = '';
+  document.getElementById('manualIncomeInput').dataset.touched = '';
+  await saveState();
+  renderForecast();
+  showToast('✅ Manuel bütçe kaydedildi', 'success');
+}
+window.saveManualBudget = saveManualBudget;
+
 function renderForecast() {
   const today = new Date();
   const totalBalance = getTotalBalance();
   
-  // Son 6 ay ortalama harcama (taksitler aylara dağıtılmış - gerçek aylık yük)
-  let totalPayment6Month = 0;
-  let monthsWithData = 0;
-  for (let i = 1; i <= 6; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    const key = getMonthKey(d);
-    let monthTotal = 0;
-    // Her harcamanın o aya düşen taksit payını topla
-    state.expenses.forEach(e => {
-      const schedule = getPaymentSchedule(e);
-      schedule.forEach(s => { if (s.month === key) monthTotal += s.amount; });
-    });
-    if (monthTotal > 0) {
-      totalPayment6Month += monthTotal;
-      monthsWithData++;
+  // === BÜTÇE MODU UI GÜNCELLE ===
+  setupBudgetModeUI();
+  
+  // === AKILLI ORTALAMA HESAPLAMA ===
+  let avgMonthlySpending = 0;
+  let avgMonthlyIncome = 0;
+  let spendingMethod = 'auto'; // 'auto', 'manual', 'future-projection'
+  let incomeMethod = 'auto';
+  
+  if (state.budgetMode === 'manual') {
+    // Manuel mod: kullanıcının girdiği değerler
+    avgMonthlySpending = state.manualBudget || 0;
+    avgMonthlyIncome = state.manualIncome || 0;
+    spendingMethod = 'manual';
+    incomeMethod = 'manual';
+  } else {
+    // Otomatik mod: önce geçmişe bak
+    let totalPayment6Month = 0;
+    let monthsWithData = 0;
+    for (let i = 1; i <= 6; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = getMonthKey(d);
+      let monthTotal = 0;
+      state.expenses.forEach(e => {
+        const schedule = getPaymentSchedule(e);
+        schedule.forEach(s => { if (s.month === key) monthTotal += s.amount; });
+      });
+      if (monthTotal > 0) {
+        totalPayment6Month += monthTotal;
+        monthsWithData++;
+      }
+    }
+    
+    // Yeterli geçmiş veri varsa (3+ ay) onu kullan
+    if (monthsWithData >= 3) {
+      avgMonthlySpending = totalPayment6Month / monthsWithData;
+      spendingMethod = 'auto';
+    } else {
+      // Veri yetersiz - gelecek taksitlere bak (önümüzdeki 6 ay)
+      let totalFuture = 0;
+      let futureMonths = 0;
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+        const key = getMonthKey(d);
+        let monthTotal = 0;
+        state.expenses.forEach(e => {
+          const schedule = getPaymentSchedule(e);
+          schedule.forEach(s => { if (s.month === key) monthTotal += s.amount; });
+        });
+        if (monthTotal > 0) {
+          totalFuture += monthTotal;
+          futureMonths++;
+        }
+      }
+      if (futureMonths > 0) {
+        avgMonthlySpending = totalFuture / futureMonths;
+        spendingMethod = 'future-projection';
+      } else {
+        avgMonthlySpending = 0;
+        spendingMethod = 'no-data';
+      }
+    }
+    
+    // Gelir için aynı mantık
+    let totalIncome6Month = 0;
+    let incomeMonths = 0;
+    for (let i = 1; i <= 6; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = getMonthKey(d);
+      let monthTotal = 0;
+      state.incomes.forEach(inc => { if (getMonthKey(new Date(inc.date)) === key) monthTotal += inc.amount; });
+      if (monthTotal > 0) { totalIncome6Month += monthTotal; incomeMonths++; }
+    }
+    if (incomeMonths >= 2) {
+      avgMonthlyIncome = totalIncome6Month / incomeMonths;
+    } else if (state.incomes.length > 0) {
+      // Az veri varsa, en son geliri al
+      const lastIncome = [...state.incomes].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+      avgMonthlyIncome = lastIncome.amount;
     }
   }
-  const avgMonthlySpending = monthsWithData > 0 ? totalPayment6Month / monthsWithData : 0;
-  
-  // Son 6 ay ortalama gelir
-  let totalIncome6Month = 0;
-  let incomeMonths = 0;
-  for (let i = 1; i <= 6; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    const key = getMonthKey(d);
-    let monthTotal = 0;
-    state.incomes.forEach(inc => { if (getMonthKey(new Date(inc.date)) === key) monthTotal += inc.amount; });
-    if (monthTotal > 0) { totalIncome6Month += monthTotal; incomeMonths++; }
-  }
-  const avgMonthlyIncome = incomeMonths > 0 ? totalIncome6Month / incomeMonths : 0;
   
   document.getElementById('avgSpending').textContent = formatCurrency(avgMonthlySpending);
+  
+  // Hesaplama yöntemi göstergesini güncelle
+  const avgSpendingMeta = document.querySelector('#avgSpending').parentElement.querySelector('.stat-meta');
+  if (avgSpendingMeta) {
+    if (spendingMethod === 'manual') {
+      avgSpendingMeta.innerHTML = '✏️ Manuel girilen';
+      avgSpendingMeta.style.color = 'var(--primary)';
+    } else if (spendingMethod === 'auto') {
+      avgSpendingMeta.innerHTML = '📊 Geçmiş 6 ay ortalaması';
+      avgSpendingMeta.style.color = '';
+    } else if (spendingMethod === 'future-projection') {
+      avgSpendingMeta.innerHTML = '🔮 Gelecek taksit projeksiyonu';
+      avgSpendingMeta.style.color = 'var(--warning)';
+    } else {
+      avgSpendingMeta.innerHTML = 'Veri yok';
+      avgSpendingMeta.style.color = 'var(--text-mute)';
+    }
+  }
   
   // Toplam ödenmemiş kart borçları (gelecek 12 ay)
   let totalUpcomingDebt = 0;
