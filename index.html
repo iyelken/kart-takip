@@ -264,6 +264,19 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .cat-bar { height: 6px; background: var(--bg-2); border-radius: 3px; overflow: hidden; }
 .cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
 
+.cat-view-btn, .trend-view-btn {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.cat-view-btn.active, .trend-view-btn.active {
+  background: var(--accent);
+  color: #0a0e1a;
+}
+
 /* === FAB === */
 .fab-container { position: fixed; bottom: 90px; right: 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
 .fab-mini { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
@@ -594,13 +607,35 @@ input:focus, select:focus, textarea:focus { outline: none; }
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title">🏷️ Kategori Dağılımı (Bu Ay)</div></div>
-        <div class="section-body"><div class="cat-list" id="catList"></div></div>
+        <div class="section-header">
+          <div class="section-title">🏷️ Kategori Dağılımı</div>
+        </div>
+        <div class="section-body">
+          <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+            <select class="form-select" id="catMonthSelect" style="flex:1; min-width:140px; padding:10px 12px; font-size:13px;"></select>
+            <div style="display:flex; background:var(--bg-2); border-radius:10px; padding:3px; gap:2px;">
+              <button class="cat-view-btn active" data-view="spending" style="padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600;">💸 Harcanan</button>
+              <button class="cat-view-btn" data-view="payment" style="padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600;">💳 Ödenen</button>
+            </div>
+          </div>
+          <div id="catViewExplain" style="font-size:11px; color:var(--text-dim); margin-bottom:12px; line-height:1.5;"></div>
+          <div class="cat-list" id="catList"></div>
+        </div>
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title">📊 Son 6 Ay Trendi</div></div>
-        <div class="section-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
+        <div class="section-header">
+          <div class="section-title">📊 Son 6 Ay Trendi</div>
+        </div>
+        <div class="section-body">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+            <div style="display:flex; background:var(--bg-2); border-radius:10px; padding:3px; gap:2px;">
+              <button class="trend-view-btn active" data-view="spending" style="padding:6px 10px; border-radius:8px; font-size:11px; font-weight:600;">💸 Harcama</button>
+              <button class="trend-view-btn" data-view="payment" style="padding:6px 10px; border-radius:8px; font-size:11px; font-weight:600;">💳 Ödeme</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -1864,17 +1899,119 @@ function clearPaymentFilter() {
 }
 window.clearPaymentFilter = clearPaymentFilter;
 
-function renderCategoryBars() {
+// Kategori dağılım state'i
+let catViewMode = 'spending'; // 'spending' = harcanan, 'payment' = ödenen
+let catSelectedMonth = null; // YYYY-MM, null = bu ay
+
+function populateCatMonthSelect() {
+  const select = document.getElementById('catMonthSelect');
+  if (!select) return;
+  
   const today = new Date();
-  const thisMonthKey = getMonthKey(today);
+  const months = [];
+  // Geçmiş 12 ay + bu ay + gelecek 6 ay
+  for (let i = -12; i <= 6; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const key = getMonthKey(d);
+    let label = d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    if (i === 0) label = '📍 Bu Ay (' + label + ')';
+    else if (i === -1) label = 'Geçen Ay (' + label + ')';
+    months.push({ key, label, isCurrent: i === 0 });
+  }
+  
+  // Aksi yönde sırala (en yeni en üstte)
+  months.reverse();
+  
+  if (!catSelectedMonth) {
+    catSelectedMonth = getMonthKey(today);
+  }
+  
+  select.innerHTML = months.map(m => 
+    `<option value="${m.key}" ${m.key === catSelectedMonth ? 'selected' : ''}>${m.label}</option>`
+  ).join('');
+  
+  if (!select.dataset.bound) {
+    select.addEventListener('change', () => {
+      catSelectedMonth = select.value;
+      renderCategoryBars();
+    });
+    select.dataset.bound = '1';
+  }
+  
+  // Toggle butonları
+  document.querySelectorAll('.cat-view-btn').forEach(btn => {
+    if (btn.dataset.bound) return;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cat-view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      catViewMode = btn.dataset.view;
+      renderCategoryBars();
+    });
+    btn.dataset.bound = '1';
+  });
+}
+
+function renderCategoryBars() {
+  populateCatMonthSelect();
+  
   const list = document.getElementById('catList');
   list.innerHTML = '';
+  
+  const targetMonth = catSelectedMonth || getMonthKey(new Date());
+  const monthDate = new Date(targetMonth + '-01');
+  const monthLabel = monthDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  
+  const explainEl = document.getElementById('catViewExplain');
+  if (explainEl) {
+    if (catViewMode === 'spending') {
+      explainEl.innerHTML = `📅 <strong>${monthLabel}</strong> içinde yapılan harcamalar. Taksitli olsa bile harcama tarihi bu aysa tam tutar gösterilir. <em>"Bu ay neye odaklandım?"</em>`;
+    } else {
+      explainEl.innerHTML = `💳 <strong>${monthLabel}</strong> ayında cebinizden çıkan/çıkacak tutar. Taksitler aylara dağıtılır. <em>"Bu ay ne kadar ödüyorum?"</em>`;
+    }
+  }
+  
   const categoryTotals = {};
-  state.expenses.forEach(e => { if (getExpenseMonth(e) === thisMonthKey) categoryTotals[e.categoryId] = (categoryTotals[e.categoryId] || 0) + e.amount; });
-  const sorted = Object.entries(categoryTotals).map(([catId, total]) => ({ cat: state.categories.find(c => c.id === catId), total })).filter(x => x.cat).sort((a, b) => b.total - a.total);
-  if (sorted.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">📊</div><div class="text">Bu ay henüz harcama yok</div></div>'; return; }
+  
+  if (catViewMode === 'spending') {
+    // Harcama bakışı: o ayda yapılan harcamalar (taksitli olsa bile tam tutar)
+    state.expenses.forEach(e => {
+      if (getExpenseMonth(e) === targetMonth) {
+        categoryTotals[e.categoryId] = (categoryTotals[e.categoryId] || 0) + e.amount;
+      }
+    });
+  } else {
+    // Ödeme bakışı: o ayda ödenecek tutar (taksitler aylara dağılmış)
+    state.expenses.forEach(e => {
+      const schedule = getPaymentSchedule(e);
+      schedule.forEach(s => {
+        if (s.month === targetMonth) {
+          categoryTotals[e.categoryId] = (categoryTotals[e.categoryId] || 0) + s.amount;
+        }
+      });
+    });
+  }
+  
+  const sorted = Object.entries(categoryTotals)
+    .map(([catId, total]) => ({ cat: state.categories.find(c => c.id === catId), total }))
+    .filter(x => x.cat).sort((a, b) => b.total - a.total);
+  
+  if (sorted.length === 0) {
+    const msg = catViewMode === 'spending' 
+      ? `${monthLabel} içinde harcama yok`
+      : `${monthLabel} içinde ödeme yok`;
+    list.innerHTML = `<div class="empty"><div class="icon">📊</div><div class="text">${msg}</div></div>`;
+    return;
+  }
+  
   const grandTotal = sorted.reduce((sum, x) => sum + x.total, 0);
   const colors = ['var(--accent)', 'var(--primary)', 'var(--success)', 'var(--purple)', 'var(--pink)', 'var(--teal)', 'var(--warning)', 'var(--danger)'];
+  
+  // Toplam göster
+  list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); margin-bottom:8px;">
+    <span style="font-size:12px; color:var(--text-dim); font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">TOPLAM (${sorted.length} kategori)</span>
+    <span style="font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--accent); font-size:14px;">${formatCurrency(grandTotal)}</span>
+  </div>`;
+  
   sorted.forEach((item, idx) => {
     const pct = (item.total / grandTotal) * 100;
     list.innerHTML += `<div><div class="cat-row"><span class="cat-name">${item.cat.icon} ${item.cat.name}</span><span class="cat-amount">${formatCurrency(item.total)} • ${pct.toFixed(0)}%</span></div><div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%; background:${colors[idx % colors.length]}"></div></div></div>`;
@@ -1882,23 +2019,46 @@ function renderCategoryBars() {
 }
 
 let trendChart = null;
+let trendViewMode = 'spending';
+
 function renderTrendChart() {
+  // Toggle butonlarını bağla
+  document.querySelectorAll('.trend-view-btn').forEach(btn => {
+    if (btn.dataset.bound) return;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.trend-view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      trendViewMode = btn.dataset.view;
+      renderTrendChart();
+    });
+    btn.dataset.bound = '1';
+  });
+  
   const today = new Date();
   const labels = [], data = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const key = getMonthKey(d);
     let total = 0;
-    state.expenses.forEach(e => { if (getExpenseMonth(e) === key) total += e.amount; });
+    if (trendViewMode === 'spending') {
+      state.expenses.forEach(e => { if (getExpenseMonth(e) === key) total += e.amount; });
+    } else {
+      state.expenses.forEach(e => {
+        const schedule = getPaymentSchedule(e);
+        schedule.forEach(s => { if (s.month === key) total += s.amount; });
+      });
+    }
     labels.push(d.toLocaleDateString('tr-TR', { month: 'short' }));
     data.push(total);
   }
+  const color = trendViewMode === 'spending' ? '#f59e0b' : '#60a5fa';
+  const bgColor = trendViewMode === 'spending' ? 'rgba(245,158,11,0.1)' : 'rgba(96,165,250,0.1)';
   const ctx = document.getElementById('trendChart').getContext('2d');
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ data, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#f59e0b', pointBorderColor: '#0a0e1a', pointBorderWidth: 2, pointRadius: 5 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+    data: { labels, datasets: [{ data, borderColor: color, backgroundColor: bgColor, tension: 0.4, fill: true, pointBackgroundColor: color, pointBorderColor: '#0a0e1a', pointBorderWidth: 2, pointRadius: 5 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatCurrency(ctx.parsed.y) } } }, scales: { y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
   });
 }
 
