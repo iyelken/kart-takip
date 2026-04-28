@@ -30,8 +30,6 @@
   window.fbGetDoc = getDoc;
   window.fbOnSnapshot = onSnapshot;
   window.firebaseReady = true;
-  
-  // Firebase yüklendiğinde haber ver
   window.dispatchEvent(new Event('firebase-ready'));
 </script>
 <style>
@@ -79,115 +77,25 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 input, select, textarea { font-family: inherit; }
 input:focus, select:focus, textarea:focus { outline: none; }
 
-/* === LOGIN SCREEN === */
-.login-screen {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-.login-card {
-  width: 100%;
-  max-width: 400px;
-  background: linear-gradient(145deg, var(--surface), var(--bg-2));
-  border-radius: 24px;
-  padding: 40px 32px;
-  border: 1px solid var(--border);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-}
-.login-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  margin: 0 auto 24px;
-  box-shadow: 0 10px 30px rgba(245,158,11,0.4);
-}
-.login-title {
-  font-family: 'Fraunces', serif;
-  font-size: 28px;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 8px;
-  letter-spacing: -0.02em;
-}
-.login-subtitle {
-  text-align: center;
-  color: var(--text-dim);
-  margin-bottom: 32px;
-  font-size: 14px;
-}
-.login-input {
-  width: 100%;
-  padding: 16px 20px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  font-size: 16px;
-  margin-bottom: 16px;
-  transition: border 0.2s;
-}
+/* === LOGIN === */
+.login-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.login-card { width: 100%; max-width: 400px; background: linear-gradient(145deg, var(--surface), var(--bg-2)); border-radius: 24px; padding: 40px 32px; border: 1px solid var(--border); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
+.login-logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 24px; box-shadow: 0 10px 30px rgba(245,158,11,0.4); }
+.login-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; text-align: center; margin-bottom: 8px; letter-spacing: -0.02em; }
+.login-subtitle { text-align: center; color: var(--text-dim); margin-bottom: 32px; font-size: 14px; }
+.login-input { width: 100%; padding: 16px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 16px; margin-bottom: 16px; transition: border 0.2s; }
 .login-input:focus { border-color: var(--accent); }
-.login-btn {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #0a0e1a;
-  font-weight: 700;
-  font-size: 16px;
-  border-radius: 12px;
-  transition: transform 0.15s;
-}
+.login-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #0a0e1a; font-weight: 700; font-size: 16px; border-radius: 12px; transition: transform 0.15s; }
 .login-btn:active { transform: scale(0.98); }
-.login-error {
-  color: var(--danger);
-  font-size: 13px;
-  text-align: center;
-  margin-top: 12px;
-  min-height: 18px;
-}
-.login-info {
-  margin-top: 24px;
-  padding: 16px;
-  background: rgba(96,165,250,0.08);
-  border: 1px solid rgba(96,165,250,0.2);
-  border-radius: 12px;
-  font-size: 13px;
-  color: var(--text-dim);
-  line-height: 1.6;
-}
+.login-error { color: var(--danger); font-size: 13px; text-align: center; margin-top: 12px; min-height: 18px; }
+.login-info { margin-top: 24px; padding: 16px; background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2); border-radius: 12px; font-size: 13px; color: var(--text-dim); line-height: 1.6; }
 
-/* === SYNC INDICATOR === */
-.sync-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--bg-2);
-  border-radius: 12px;
-  font-size: 11px;
-  color: var(--text-dim);
-  font-weight: 600;
-  border: 1px solid var(--border);
-}
+/* === SYNC === */
+.sync-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--bg-2); border-radius: 12px; font-size: 11px; color: var(--text-dim); font-weight: 600; border: 1px solid var(--border); }
 .sync-status.syncing { color: var(--primary); }
 .sync-status.synced { color: var(--success); border-color: rgba(52,211,153,0.3); }
 .sync-status.error { color: var(--danger); border-color: rgba(248,113,113,0.3); }
-.sync-status .dot-icon {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-}
+.sync-status .dot-icon { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .sync-status.syncing .dot-icon { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -196,143 +104,61 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .app.active { display: block; }
 
 /* === HEADER === */
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(20px);
-  background: rgba(10,14,26,0.85);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 20px;
-}
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
-  gap: 12px;
-}
-.header-title {
-  font-family: 'Fraunces', serif;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
+.header { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,14,26,0.85); border-bottom: 1px solid var(--border); padding: 16px 20px; }
+.header-row { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; gap: 12px; }
+.header-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
 .header-actions { display: flex; gap: 8px; align-items: center; }
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: all 0.2s;
-}
+.icon-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.2s; }
 .icon-btn:active { transform: scale(0.95); background: var(--surface-2); }
 
 /* === CONTENT === */
-.content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
+.content { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
 /* === PAGES === */
 .page { display: none; animation: fadeIn 0.3s; }
 .page.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-.page-title {
-  font-family: 'Fraunces', serif;
-  font-size: 32px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  margin-bottom: 4px;
-}
-.page-subtitle {
-  color: var(--text-dim);
-  font-size: 14px;
-  margin-bottom: 24px;
-}
+.page-title { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 600; letter-spacing: -0.03em; margin-bottom: 4px; }
+.page-subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 24px; }
 
-/* === STAT CARDS === */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.stat-card {
-  background: linear-gradient(145deg, var(--surface), var(--bg-2));
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
+/* === NET DURUM PANEL === */
+.net-status {
+  background: linear-gradient(135deg, var(--primary-2), var(--purple));
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
   position: relative;
   overflow: hidden;
 }
-.stat-card::before {
+.net-status::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gradient, linear-gradient(90deg, var(--accent), var(--accent-2)));
+  top: -50%; right: -20%;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  filter: blur(40px);
 }
-.stat-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.stat-value {
-  font-family: 'Fraunces', serif;
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-.stat-meta {
-  font-size: 12px;
-  color: var(--text-mute);
-  margin-top: 4px;
-}
+.net-label { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.net-amount { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 700; letter-spacing: -0.02em; margin: 4px 0; }
+.net-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.2); position: relative; }
+.net-row-label { font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.net-row-value { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; margin-top: 2px; }
+
+/* === STAT CARDS === */
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: linear-gradient(145deg, var(--surface), var(--bg-2)); border: 1px solid var(--border); border-radius: 16px; padding: 16px; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gradient, linear-gradient(90deg, var(--accent), var(--accent-2))); }
+.stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 600; }
+.stat-value { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.stat-meta { font-size: 12px; color: var(--text-mute); margin-top: 4px; }
 
 /* === SECTION === */
-.section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  margin-bottom: 16px;
-  overflow: hidden;
-}
-.section-header {
-  padding: 16px 18px 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.section-title {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
-}
-.section-action {
-  font-size: 12px;
-  color: var(--accent);
-  font-weight: 600;
-}
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; margin-bottom: 16px; overflow: hidden; }
+.section-header { padding: 16px 18px 12px; display: flex; justify-content: space-between; align-items: center; }
+.section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.section-action { font-size: 12px; color: var(--accent); font-weight: 600; cursor: pointer; }
 .section-body { padding: 0 18px 18px; }
 .section-body.no-pad { padding: 0; }
 
@@ -340,70 +166,86 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .payment-list { display: flex; flex-direction: column; gap: 8px; }
 .payment-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 14px;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 12px;
   padding: 14px;
   background: var(--bg-2);
   border-radius: 14px;
   border: 1px solid transparent;
-  transition: border 0.2s;
+  transition: all 0.2s;
   align-items: center;
 }
 .payment-item.urgent { border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.06); }
 .payment-item.warning { border-color: rgba(251,146,60,0.3); }
+.payment-item.overdue { border-color: var(--danger); background: rgba(248,113,113,0.1); animation: blink 2s infinite; }
+.payment-item.paid { opacity: 0.6; background: rgba(52,211,153,0.06); border-color: rgba(52,211,153,0.3); }
+@keyframes blink { 0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.4); } 50% { box-shadow: 0 0 0 4px rgba(248,113,113,0.1); } }
 
-.day-badge {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
-  background: var(--surface-2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Fraunces', serif;
-}
+.day-badge { width: 50px; height: 50px; border-radius: 12px; background: var(--surface-2); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Fraunces', serif; }
 .day-badge .num { font-size: 18px; font-weight: 700; line-height: 1; }
 .day-badge .month { font-size: 9px; color: var(--text-dim); text-transform: uppercase; margin-top: 2px; letter-spacing: 0.05em; }
-.payment-item.urgent .day-badge { background: var(--danger); }
-.payment-item.urgent .day-badge .num,
-.payment-item.urgent .day-badge .month { color: white; }
+.payment-item.urgent .day-badge, .payment-item.overdue .day-badge { background: var(--danger); }
+.payment-item.urgent .day-badge .num, .payment-item.urgent .day-badge .month,
+.payment-item.overdue .day-badge .num, .payment-item.overdue .day-badge .month { color: white; }
+.payment-item.paid .day-badge { background: var(--success); }
+.payment-item.paid .day-badge .num, .payment-item.paid .day-badge .month { color: white; }
 
+.payment-info { min-width: 0; }
 .payment-info .name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
 .payment-info .meta { font-size: 12px; color: var(--text-dim); }
+.payment-info .paid-meta { font-size: 11px; color: var(--success); margin-top: 3px; font-weight: 600; }
 .payment-amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; text-align: right; }
-.payment-amount .days { font-size: 10px; color: var(--text-mute); display: block; margin-top: 2px; font-family: 'Manrope'; }
+.payment-amount .days { font-size: 10px; color: var(--text-mute); display: block; margin-top: 2px; font-family: 'Manrope'; font-weight: 500; }
+.payment-amount .days.overdue-text { color: var(--danger); font-weight: 600; }
+.payment-amount.paid-amount { color: var(--success); }
+
+.pay-btn {
+  background: var(--success);
+  color: #0a0e1a;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: transform 0.15s;
+}
+.pay-btn:active { transform: scale(0.95); }
+.pay-btn.unpaid { background: var(--surface-2); color: var(--text-dim); }
+
+/* === ACCOUNTS === */
+.account-grid { display: grid; gap: 10px; }
+.account-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--bg-2);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border 0.2s;
+}
+.account-item:active { border-color: var(--accent); }
+.account-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.account-info { flex: 1; min-width: 0; }
+.account-name { font-weight: 600; font-size: 15px; }
+.account-type { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+.account-balance { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; text-align: right; white-space: nowrap; }
+.account-balance.negative { color: var(--danger); }
 
 /* === EXPENSES === */
 .expense-list { display: flex; flex-direction: column; }
-.expense-item {
-  display: flex;
-  gap: 12px;
-  padding: 14px 18px;
-  border-top: 1px solid var(--border);
-  align-items: center;
-  cursor: pointer;
-  transition: background 0.15s;
-}
+.expense-item { display: flex; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--border); align-items: center; cursor: pointer; transition: background 0.15s; }
 .expense-item:active { background: var(--bg-2); }
-.expense-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--surface-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
+.expense-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
 .expense-info { flex: 1; min-width: 0; }
 .expense-info .desc { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .expense-info .meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 .expense-amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px; text-align: right; }
 .expense-amount .taksit { font-size: 10px; color: var(--accent); display: block; }
+.expense-amount.income { color: var(--success); }
 
-/* === CATEGORY BARS === */
+/* === CAT === */
 .cat-list { display: flex; flex-direction: column; gap: 12px; }
 .cat-row { display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline; }
 .cat-name { font-size: 13px; font-weight: 500; }
@@ -412,10 +254,26 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
 
 /* === FAB === */
+.fab-container { position: fixed; bottom: 90px; right: 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
+.fab-mini { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
+.fab-mini.show { display: flex; animation: fadeIn 0.2s; }
+.fab-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+.fab-action .ico { font-size: 18px; }
+.fab-action.income { background: var(--success); color: #0a0e1a; border-color: var(--success); }
+.fab-action.expense { background: var(--accent); color: #0a0e1a; border-color: var(--accent); }
 .fab {
-  position: fixed;
-  bottom: 90px;
-  right: 20px;
   width: 60px;
   height: 60px;
   border-radius: 20px;
@@ -427,207 +285,70 @@ input:focus, select:focus, textarea:focus { outline: none; }
   align-items: center;
   justify-content: center;
   box-shadow: 0 10px 30px rgba(245,158,11,0.5);
-  z-index: 50;
-  transition: transform 0.15s;
+  transition: transform 0.2s;
 }
 .fab:active { transform: scale(0.92); }
+.fab.active { transform: rotate(45deg); }
 
 /* === BOTTOM NAV === */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(10,14,26,0.95);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-  z-index: 90;
-  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
-}
-.nav-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  max-width: 600px;
-  margin: 0 auto;
-}
-.nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 8px 4px;
-  color: var(--text-mute);
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 10px;
-  transition: color 0.2s;
-}
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,14,26,0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border); z-index: 90; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)); }
+.nav-row { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 600px; margin: 0 auto; }
+.nav-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; color: var(--text-mute); font-size: 10px; font-weight: 600; border-radius: 10px; transition: color 0.2s; }
 .nav-btn .icon { font-size: 20px; }
 .nav-btn.active { color: var(--accent); }
 .nav-btn:active { background: var(--surface); }
 
 /* === MODAL === */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 200;
-  display: none;
-  align-items: flex-end;
-  justify-content: center;
-  animation: overlayIn 0.2s;
-}
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: flex-end; justify-content: center; animation: overlayIn 0.2s; }
 .modal-overlay.active { display: flex; }
 @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-
-.modal {
-  width: 100%;
-  max-width: 500px;
-  max-height: 92vh;
-  overflow-y: auto;
-  background: var(--surface);
-  border-radius: 24px 24px 0 0;
-  padding: 24px;
-  animation: modalIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
+.modal { width: 100%; max-width: 500px; max-height: 92vh; overflow-y: auto; background: var(--surface); border-radius: 24px 24px 0 0; padding: 24px; animation: modalIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1); }
 @keyframes modalIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-.modal-handle {
-  width: 40px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  margin: -8px auto 16px;
-}
-.modal-title {
-  font-family: 'Fraunces', serif;
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  letter-spacing: -0.02em;
-}
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: -8px auto 16px; }
+.modal-title { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.02em; }
 .modal-subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
 
 .form-group { margin-bottom: 14px; }
-.form-label {
-  display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.form-input, .form-select {
-  width: 100%;
-  padding: 14px 16px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  font-size: 15px;
-  transition: border 0.2s;
-}
+.form-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
+.form-input, .form-select { width: 100%; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 15px; transition: border 0.2s; }
 .form-input:focus, .form-select:focus { border-color: var(--accent); }
-
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-.btn {
-  padding: 14px 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: transform 0.15s, opacity 0.2s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
+.btn { padding: 14px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; transition: transform 0.15s, opacity 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .btn:active { transform: scale(0.97); }
 .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #0a0e1a; }
 .btn-secondary { background: var(--surface-2); color: var(--text); }
 .btn-danger { background: var(--danger); color: white; }
+.btn-success { background: var(--success); color: #0a0e1a; }
 .btn-block { width: 100%; }
-
 .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
 .modal-actions .btn { flex: 1; }
 
-/* === CHIP === */
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-.chip {
-  padding: 8px 14px;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
+/* === ICON SELECTOR === */
+.icon-selector { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.icon-option { aspect-ratio: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; }
+.icon-option.selected { background: var(--accent); border-color: var(--accent); }
+
+/* === CHIPS === */
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.chip { padding: 8px 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
 .chip.active { background: var(--accent); color: #0a0e1a; border-color: var(--accent); font-weight: 600; }
 
 /* === MGMT === */
-.mgmt-card {
-  background: var(--bg-2);
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 10px;
-  border: 1px solid var(--border);
-}
-.mgmt-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
+.mgmt-card { background: var(--bg-2); border-radius: 14px; padding: 16px; margin-bottom: 10px; border: 1px solid var(--border); }
+.mgmt-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .mgmt-name { font-weight: 600; font-size: 16px; }
 .mgmt-actions { display: flex; gap: 6px; }
-.mgmt-icon-btn {
-  width: 32px;
-  height: 32px;
-  background: var(--surface-2);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-.mgmt-detail { display: flex; gap: 16px; font-size: 12px; color: var(--text-dim); }
+.mgmt-icon-btn { width: 32px; height: 32px; background: var(--surface-2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.mgmt-detail { display: flex; gap: 16px; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; }
 
 /* === CHART === */
-.chart-wrap {
-  height: 240px;
-  padding: 8px;
-  position: relative;
-}
+.chart-wrap { height: 240px; padding: 8px; position: relative; }
 
 /* === MONTH SELECTOR === */
-.month-selector {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-}
+.month-selector { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
 .month-selector::-webkit-scrollbar { display: none; }
-
-.month-pill {
-  padding: 10px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  white-space: nowrap;
-  font-size: 13px;
-  font-weight: 500;
-  flex-shrink: 0;
-  transition: all 0.15s;
-  text-align: center;
-}
+.month-pill { padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; white-space: nowrap; font-size: 13px; font-weight: 500; flex-shrink: 0; transition: all 0.15s; text-align: center; }
 .month-pill .label { display: block; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
 .month-pill .amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; margin-top: 2px; }
 .month-pill.active { background: var(--accent); border-color: var(--accent); color: #0a0e1a; }
@@ -635,11 +356,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .month-pill.future { background: var(--bg-2); }
 
 /* === EMPTY === */
-.empty {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-dim);
-}
+.empty { text-align: center; padding: 40px 20px; color: var(--text-dim); }
 .empty .icon { font-size: 48px; opacity: 0.5; margin-bottom: 12px; }
 .empty .text { font-size: 14px; }
 
@@ -647,102 +364,51 @@ input:focus, select:focus, textarea:focus { outline: none; }
 @media (min-width: 768px) {
   .stat-grid { grid-template-columns: repeat(4, 1fr); }
   .content { padding: 32px; }
-  .modal {
-    border-radius: 20px;
-    max-width: 600px;
-    margin: auto;
-  }
+  .modal { border-radius: 20px; max-width: 600px; margin: auto; }
   .modal-overlay { align-items: center; }
   @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 }
 
 /* === TOAST === */
-.toast {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 12px 20px;
-  border-radius: 12px;
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  font-size: 14px;
-  font-weight: 500;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.3s;
-}
+.toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); padding: 12px 20px; border-radius: 12px; z-index: 300; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: all 0.3s; max-width: calc(100vw - 32px); }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(8px); }
 .toast.success { border-color: var(--success); }
 .toast.error { border-color: var(--danger); }
+.toast.warning { border-color: var(--warning); }
 
 /* === MGMT TABS === */
-.mgmt-tabs {
-  display: flex;
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 4px;
-  margin-bottom: 16px;
-}
-.mgmt-tab {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.mgmt-tabs { display: flex; background: var(--surface); border-radius: 12px; padding: 4px; margin-bottom: 16px; gap: 2px; overflow-x: auto; }
+.mgmt-tab { flex: 1; padding: 10px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: all 0.2s; white-space: nowrap; min-width: max-content; }
 .mgmt-tab.active { background: var(--accent); color: #0a0e1a; }
 
-/* === CLOUD ID DISPLAY === */
-.cloud-id-box {
-  background: rgba(96,165,250,0.1);
-  border: 1px solid rgba(96,165,250,0.3);
-  padding: 14px;
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-.cloud-id-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.cloud-id-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  word-break: break-all;
-  color: var(--primary);
-}
+/* === CLOUD ID === */
+.cloud-id-box { background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.3); padding: 14px; border-radius: 12px; margin-bottom: 16px; }
+.cloud-id-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 600; }
+.cloud-id-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; word-break: break-all; color: var(--primary); }
+
+/* === HISTORY === */
+.history-item { display: flex; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--border); align-items: center; }
+.history-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(52,211,153,0.15); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.history-info { flex: 1; min-width: 0; }
+.history-info .title { font-weight: 500; font-size: 14px; }
+.history-info .meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.history-amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px; text-align: right; color: var(--success); }
 </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
     <div class="login-logo">💳</div>
     <h1 class="login-title" id="loginTitle">Hoş Geldin</h1>
     <p class="login-subtitle" id="loginSubtitle">Şifreni girerek devam et</p>
-    
-    <input type="text" class="login-input" id="cloudIdInput" placeholder="Bulut ID (yeni kullanıcılar boş bırakın)" autocomplete="off" style="display:none;">
+    <input type="text" class="login-input" id="cloudIdInput" placeholder="Bulut ID" autocomplete="off" style="display:none;">
     <input type="password" class="login-input" id="passwordInput" placeholder="Şifre" autocomplete="current-password">
     <input type="password" class="login-input" id="passwordConfirm" placeholder="Şifreyi tekrar gir" autocomplete="new-password" style="display:none;">
     <button class="login-btn" id="loginBtn">Giriş Yap</button>
     <div class="login-error" id="loginError"></div>
-    <div class="login-info" id="loginInfo">
-      ☁️ <strong>Bulut Senkronizasyonu Aktif:</strong> Verilerin Firebase'de şifreli olarak saklanır. Tüm cihazlarından aynı verilere erişebilirsin.
-    </div>
+    <div class="login-info">☁️ <strong>Bulut Senkron:</strong> Verilerin Firebase'de şifreli saklanır. Tüm cihazlarından erişebilirsin.</div>
     <div style="text-align:center; margin-top:16px; display:flex; flex-direction:column; gap:8px;">
       <button id="newAccountBtn" style="font-size:13px; color:var(--accent); font-weight:600;">Yeni hesap oluştur</button>
       <button id="existingAccountBtn" style="font-size:13px; color:var(--primary); font-weight:600; display:none;">Mevcut hesaba bağlan</button>
@@ -751,7 +417,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- APP -->
 <div class="app" id="app">
   <header class="header">
     <div class="header-row">
@@ -770,19 +436,35 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <h1 class="page-title">Ana Panel</h1>
       <p class="page-subtitle" id="todayDate"></p>
 
-      <div class="stat-grid">
-        <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--accent), var(--accent-2));">
-          <div class="stat-label">Bu Ay Ödenecek</div>
-          <div class="stat-value" id="stat-payment">₺0</div>
-          <div class="stat-meta" id="stat-payment-meta">0 kart</div>
+      <!-- Net Durum -->
+      <div class="net-status">
+        <div class="net-label">💎 Net Varlık</div>
+        <div class="net-amount" id="netTotal">₺0</div>
+        <div class="net-rows">
+          <div>
+            <div class="net-row-label">Bu Ay Ödenecek</div>
+            <div class="net-row-value" id="netDebt">₺0</div>
+          </div>
+          <div>
+            <div class="net-row-label">Ay Sonu Tahmin</div>
+            <div class="net-row-value" id="netProjected">₺0</div>
+          </div>
         </div>
+      </div>
+
+      <div class="stat-grid">
         <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--primary), var(--purple));">
           <div class="stat-label">Bu Ay Harcama</div>
           <div class="stat-value" id="stat-spending">₺0</div>
           <div class="stat-meta" id="stat-spending-meta">0 işlem</div>
         </div>
+        <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--success), var(--teal));">
+          <div class="stat-label">Bu Ay Gelir</div>
+          <div class="stat-value" id="stat-income">₺0</div>
+          <div class="stat-meta" id="stat-income-meta">0 işlem</div>
+        </div>
         <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--teal), var(--success));">
-          <div class="stat-label">Geçen Ay</div>
+          <div class="stat-label">Geçen Ay Harcama</div>
           <div class="stat-value" id="stat-lastmonth">₺0</div>
           <div class="stat-meta" id="stat-trend">—</div>
         </div>
@@ -794,8 +476,16 @@ input:focus, select:focus, textarea:focus { outline: none; }
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title">📅 Bu Ay Ödeme Takvimi</div></div>
+        <div class="section-header"><div class="section-title">📅 Yaklaşan Ödemeler</div></div>
         <div class="section-body"><div class="payment-list" id="paymentList"></div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">💰 Hesaplarım</div>
+          <span class="section-action" onclick="goToPage('accounts')">Tümü →</span>
+        </div>
+        <div class="section-body"><div class="account-grid" id="homeAccounts"></div></div>
       </div>
 
       <div class="section">
@@ -806,6 +496,49 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <div class="section">
         <div class="section-header"><div class="section-title">📊 Son 6 Ay Trendi</div></div>
         <div class="section-body"><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS -->
+    <div class="page" id="page-accounts">
+      <h1 class="page-title">Hesaplarım</h1>
+      <p class="page-subtitle">Bakiye ve varlık takibi</p>
+
+      <div class="net-status" style="background: linear-gradient(135deg, var(--success), var(--teal));">
+        <div class="net-label">💎 Toplam Varlık</div>
+        <div class="net-amount" id="totalBalance">₺0</div>
+        <div class="net-rows">
+          <div>
+            <div class="net-row-label">Bu Ay Gelir</div>
+            <div class="net-row-value" id="monthIncome">₺0</div>
+          </div>
+          <div>
+            <div class="net-row-label">Hesap Sayısı</div>
+            <div class="net-row-value" id="accountCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" style="margin-bottom: 14px;" onclick="openAccountModal()">+ Yeni Hesap Ekle</button>
+
+      <div class="section">
+        <div class="section-body" style="padding-top:16px;">
+          <div class="account-grid" id="allAccounts"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title">📥 Son Gelirler</div></div>
+        <div class="section-body no-pad">
+          <div id="incomeList"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title">💳 Son Kart Ödemeleri</div></div>
+        <div class="section-body no-pad">
+          <div id="paymentHistoryList"></div>
+        </div>
       </div>
     </div>
 
@@ -844,27 +577,6 @@ input:focus, select:focus, textarea:focus { outline: none; }
       </div>
     </div>
 
-    <!-- STATS -->
-    <div class="page" id="page-stats">
-      <h1 class="page-title">İstatistikler</h1>
-      <p class="page-subtitle">Detaylı analiz</p>
-
-      <div class="section">
-        <div class="section-header"><div class="section-title">🏷️ Kategori Dağılımı</div></div>
-        <div class="section-body"><div class="chart-wrap"><canvas id="catChart"></canvas></div></div>
-      </div>
-
-      <div class="section">
-        <div class="section-header"><div class="section-title">💳 Kart Bazlı Bu Ay</div></div>
-        <div class="section-body"><div class="chart-wrap"><canvas id="cardChart"></canvas></div></div>
-      </div>
-
-      <div class="section">
-        <div class="section-header"><div class="section-title">📊 Genel Özet</div></div>
-        <div class="section-body"><div id="generalStats"></div></div>
-      </div>
-    </div>
-
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <h1 class="page-title">Ayarlar</h1>
@@ -873,6 +585,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <div class="mgmt-tabs">
         <div class="mgmt-tab active" data-mgmt="cards">💳 Kartlar</div>
         <div class="mgmt-tab" data-mgmt="categories">🏷️ Kategoriler</div>
+        <div class="mgmt-tab" data-mgmt="incomesources">📥 Gelir Kaynakları</div>
         <div class="mgmt-tab" data-mgmt="security">🔐 Hesap</div>
       </div>
 
@@ -886,11 +599,16 @@ input:focus, select:focus, textarea:focus { outline: none; }
         <div id="categoryList"></div>
       </div>
 
+      <div id="mgmt-incomesources" class="mgmt-section" style="display:none;">
+        <button class="btn btn-primary btn-block" style="margin-bottom: 14px;" onclick="openIncomeSourceModal()">+ Yeni Gelir Kaynağı Ekle</button>
+        <div id="incomeSourceList"></div>
+      </div>
+
       <div id="mgmt-security" class="mgmt-section" style="display:none;">
         <div class="section">
           <div class="section-body" style="padding-top:16px;">
             <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px;">☁️ Bulut Hesap Bilgisi</h3>
-            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Bu ID'yi başka cihazda giriş yaparken kullanırsın. Şifrenle birlikte verilerine erişirsin.</p>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Bu ID'yi başka cihazda giriş yaparken kullanırsın.</p>
             <div class="cloud-id-box">
               <div class="cloud-id-label">Bulut ID</div>
               <div class="cloud-id-value" id="cloudIdDisplay">-</div>
@@ -902,19 +620,10 @@ input:focus, select:focus, textarea:focus { outline: none; }
         <div class="section" style="margin-top:14px;">
           <div class="section-body" style="padding-top:16px;">
             <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px;">Şifre Değiştir</h3>
-            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Yeni bir şifre belirle. Diğer cihazlarda da bu şifreyi kullanmalısın.</p>
-            <div class="form-group">
-              <label class="form-label">Mevcut Şifre</label>
-              <input type="password" class="form-input" id="oldPass">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Yeni Şifre</label>
-              <input type="password" class="form-input" id="newPass">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Yeni Şifre (Tekrar)</label>
-              <input type="password" class="form-input" id="newPassConfirm">
-            </div>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Diğer cihazlarda da bu yeni şifreyi kullan.</p>
+            <div class="form-group"><label class="form-label">Mevcut Şifre</label><input type="password" class="form-input" id="oldPass"></div>
+            <div class="form-group"><label class="form-label">Yeni Şifre</label><input type="password" class="form-input" id="newPass"></div>
+            <div class="form-group"><label class="form-label">Yeni Şifre (Tekrar)</label><input type="password" class="form-input" id="newPassConfirm"></div>
             <button class="btn btn-primary btn-block" onclick="changePassword()">Şifreyi Değiştir</button>
           </div>
         </div>
@@ -922,7 +631,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
         <div class="section" style="margin-top:14px;">
           <div class="section-body" style="padding-top:16px;">
             <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px;">💾 Yerel Yedekleme</h3>
-            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Verilerinin yerel JSON yedeğini al veya geri yükle.</p>
+            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">JSON yedek al veya yükle.</p>
             <div style="display:flex; gap:10px;">
               <button class="btn btn-secondary" style="flex:1;" id="exportBtn">⬇ İndir</button>
               <button class="btn btn-secondary" style="flex:1;" id="importBtn">⬆ Yükle</button>
@@ -933,7 +642,6 @@ input:focus, select:focus, textarea:focus { outline: none; }
         <div class="section" style="margin-top:14px;">
           <div class="section-body" style="padding-top:16px;">
             <h3 style="font-family: 'Fraunces', serif; font-size: 18px; margin-bottom: 8px; color: var(--danger);">Tehlikeli Bölge</h3>
-            <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Bu cihazdan çıkış yap (veriler bulutta kalır, yeniden bağlanabilirsin).</p>
             <button class="btn btn-danger btn-block" onclick="logoutDevice()">Çıkış Yap</button>
           </div>
         </div>
@@ -942,15 +650,21 @@ input:focus, select:focus, textarea:focus { outline: none; }
 
   </main>
 
-  <button class="fab" onclick="openExpenseModal()">+</button>
+  <div class="fab-container">
+    <div class="fab-mini" id="fabMini">
+      <button class="fab-action income" onclick="openIncomeModal()"><span class="ico">💰</span> Gelir Ekle</button>
+      <button class="fab-action expense" onclick="openExpenseModal()"><span class="ico">💸</span> Harcama Ekle</button>
+    </div>
+    <button class="fab" id="fabMain" onclick="toggleFab()">+</button>
+  </div>
 
   <nav class="bottom-nav">
     <div class="nav-row">
       <button class="nav-btn active" data-page="home"><span class="icon">⌂</span><span>Panel</span></button>
+      <button class="nav-btn" data-page="accounts"><span class="icon">💰</span><span>Hesap</span></button>
       <button class="nav-btn" data-page="expenses"><span class="icon">📋</span><span>Harcama</span></button>
       <button class="nav-btn" data-page="calendar"><span class="icon">📅</span><span>Takvim</span></button>
-      <button class="nav-btn" data-page="stats"><span class="icon">📊</span><span>İstatistik</span></button>
-      <button class="nav-btn" data-page="settings"><span class="icon">⚙</span><span>Ayarlar</span></button>
+      <button class="nav-btn" data-page="settings"><span class="icon">⚙</span><span>Ayar</span></button>
     </div>
   </nav>
 </div>
@@ -983,13 +697,12 @@ input:focus, select:focus, textarea:focus { outline: none; }
   <div class="modal">
     <div class="modal-handle"></div>
     <h2 class="modal-title" id="cardModalTitle">Yeni Kart</h2>
-    <p class="modal-subtitle">Kart bilgilerini gir</p>
     <div class="form-group"><label class="form-label">Kart Adı</label><input type="text" class="form-input" id="card-name" placeholder="Örn: Yapı Kredi"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Hesap Kesim Günü</label><input type="number" min="1" max="31" class="form-input" id="card-cutoff" placeholder="12"></div>
-      <div class="form-group"><label class="form-label">Son Ödeme Günü</label><input type="number" min="1" max="31" class="form-input" id="card-due" placeholder="21"></div>
+      <div class="form-group"><label class="form-label">Hesap Kesim Günü</label><input type="number" min="1" max="31" class="form-input" id="card-cutoff"></div>
+      <div class="form-group"><label class="form-label">Son Ödeme Günü</label><input type="number" min="1" max="31" class="form-input" id="card-due"></div>
     </div>
-    <div class="form-group"><label class="form-label">Limit (Opsiyonel)</label><input type="number" min="0" class="form-input" id="card-limit" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">Limit (Opsiyonel)</label><input type="number" min="0" class="form-input" id="card-limit"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('cardModal')">İptal</button>
       <button class="btn btn-danger" id="card-delete-btn" style="display:none;" onclick="deleteCard()">Sil</button>
@@ -1003,9 +716,8 @@ input:focus, select:focus, textarea:focus { outline: none; }
   <div class="modal">
     <div class="modal-handle"></div>
     <h2 class="modal-title" id="catModalTitle">Yeni Kategori</h2>
-    <p class="modal-subtitle">Kategori adı ve ikonu gir</p>
-    <div class="form-group"><label class="form-label">Kategori Adı</label><input type="text" class="form-input" id="cat-name" placeholder="Örn: Market"></div>
-    <div class="form-group"><label class="form-label">İkon (Emoji)</label><input type="text" class="form-input" id="cat-icon" placeholder="🛒" maxlength="4"></div>
+    <div class="form-group"><label class="form-label">Kategori Adı</label><input type="text" class="form-input" id="cat-name"></div>
+    <div class="form-group"><label class="form-label">İkon (Emoji)</label><input type="text" class="form-input" id="cat-icon" maxlength="4"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('categoryModal')">İptal</button>
       <button class="btn btn-danger" id="cat-delete-btn" style="display:none;" onclick="deleteCategory()">Sil</button>
@@ -1014,19 +726,108 @@ input:focus, select:focus, textarea:focus { outline: none; }
   </div>
 </div>
 
+<!-- ACCOUNT MODAL -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="accountModalTitle">Yeni Hesap</h2>
+    <p class="modal-subtitle">Hesap bilgilerini gir</p>
+    <div class="form-group"><label class="form-label">Hesap Adı</label><input type="text" class="form-input" id="account-name" placeholder="Örn: Ziraat, Nakit, Altın"></div>
+    <div class="form-group">
+      <label class="form-label">Hesap Tipi</label>
+      <select class="form-select" id="account-type">
+        <option value="bank">🏦 Banka</option>
+        <option value="cash">💵 Nakit</option>
+        <option value="gold">🪙 Değerli Maden / Altın</option>
+        <option value="crypto">₿ Kripto Para</option>
+        <option value="invest">📈 Yatırım</option>
+        <option value="other">💼 Diğer</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Mevcut Bakiye (₺)</label><input type="number" step="0.01" class="form-input" id="account-balance" placeholder="0.00"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('accountModal')">İptal</button>
+      <button class="btn btn-danger" id="account-delete-btn" style="display:none;" onclick="deleteAccount()">Sil</button>
+      <button class="btn btn-primary" onclick="saveAccount()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- INCOME MODAL -->
+<div class="modal-overlay" id="incomeModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="incomeModalTitle">Gelir Ekle</h2>
+    <p class="modal-subtitle">Gelen parayı kaydet, hesap bakiyesi otomatik güncellenir</p>
+    <div class="form-group"><label class="form-label">Tarih</label><input type="date" class="form-input" id="inc-date"></div>
+    <div class="form-group"><label class="form-label">Tutar (₺)</label><input type="number" step="0.01" class="form-input" id="inc-amount" placeholder="0.00"></div>
+    <div class="form-group"><label class="form-label">Gelir Kaynağı</label><select class="form-select" id="inc-source"></select></div>
+    <div class="form-group"><label class="form-label">Hangi Hesaba?</label><select class="form-select" id="inc-account"></select></div>
+    <div class="form-group"><label class="form-label">Açıklama (Opsiyonel)</label><input type="text" class="form-input" id="inc-note" placeholder="Örn: Nisan maaşı"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('incomeModal')">İptal</button>
+      <button class="btn btn-danger" id="inc-delete-btn" style="display:none;" onclick="deleteIncome()">Sil</button>
+      <button class="btn btn-success" onclick="saveIncome()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- INCOME SOURCE MODAL -->
+<div class="modal-overlay" id="incomeSourceModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="incSrcModalTitle">Yeni Gelir Kaynağı</h2>
+    <div class="form-group"><label class="form-label">Adı</label><input type="text" class="form-input" id="incsrc-name" placeholder="Örn: Maaş, Bonus, Ek İş"></div>
+    <div class="form-group"><label class="form-label">İkon (Emoji)</label><input type="text" class="form-input" id="incsrc-icon" maxlength="4" placeholder="💼"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('incomeSourceModal')">İptal</button>
+      <button class="btn btn-danger" id="incsrc-delete-btn" style="display:none;" onclick="deleteIncomeSource()">Sil</button>
+      <button class="btn btn-primary" onclick="saveIncomeSource()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title">Kart Ödemesi</h2>
+    <p class="modal-subtitle" id="paymentModalSubtitle">Hangi hesaptan ödedin?</p>
+    
+    <div style="background:var(--bg-2); padding:14px; border-radius:12px; margin-bottom:16px;">
+      <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">ÖDENECEK TUTAR</div>
+      <div style="font-family:'Fraunces',serif; font-size:28px; font-weight:600; margin-top:4px;" id="paymentAmount">₺0</div>
+    </div>
+    
+    <div class="form-group"><label class="form-label">Hangi Hesaptan?</label><select class="form-select" id="pay-account"></select></div>
+    <div class="form-group"><label class="form-label">Ödeme Tarihi</label><input type="date" class="form-input" id="pay-date"></div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('paymentModal')">İptal</button>
+      <button class="btn btn-success" onclick="confirmPayment()">✓ Ödendi Olarak İşaretle</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO PAYMENT MODAL -->
+<div class="modal-overlay" id="undoPaymentModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title">Ödemeyi Geri Al</h2>
+    <p class="modal-subtitle" id="undoPaymentSubtitle">Bu ödemeyi iptal etmek istiyor musun? Hesabına geri eklenecek.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('undoPaymentModal')">İptal</button>
+      <button class="btn btn-danger" onclick="confirmUndoPayment()">Ödemeyi Geri Al</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-// ============================================================================
-// CONFIG
-// ============================================================================
 const CLOUD_ID_KEY = 'krediKart_cloudId';
 const HASH_KEY = 'krediKart_hash';
 const LOCAL_DATA_KEY = 'krediKart_localData';
-
-// ============================================================================
-// CRYPTO HELPERS
-// ============================================================================
 
 async function hash(text) {
   const buffer = new TextEncoder().encode(text);
@@ -1036,46 +837,26 @@ async function hash(text) {
 
 async function deriveKey(password) {
   const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-  );
-  return await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: enc.encode('kart-takip-salt-v1'), iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('kart-takip-salt-v1'), iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
 async function encryptData(data, password) {
   const key = await deriveKey(password);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const enc = new TextEncoder();
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    enc.encode(JSON.stringify(data))
-  );
-  return {
-    iv: Array.from(iv),
-    data: Array.from(new Uint8Array(ciphertext))
-  };
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(data)));
+  return { iv: Array.from(iv), data: Array.from(new Uint8Array(ciphertext)) };
 }
 
 async function decryptData(encrypted, password) {
   const key = await deriveKey(password);
   const iv = new Uint8Array(encrypted.iv);
   const ciphertext = new Uint8Array(encrypted.data);
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    ciphertext
-  );
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
   return JSON.parse(new TextDecoder().decode(decrypted));
 }
 
-// Rastgele Cloud ID üret
 function generateCloudId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id = '';
@@ -1086,39 +867,27 @@ function generateCloudId() {
   return id;
 }
 
-// ============================================================================
-// STATE
-// ============================================================================
-
+// === STATE ===
 let state = {
   cards: [],
   categories: [],
   expenses: [],
+  accounts: [],
+  incomes: [],
+  incomeSources: [],
+  payments: [], // { id, cardId, paymentMonth (YYYY-MM), accountId, amount, date }
   lastUpdated: 0
 };
 let currentPassword = null;
 let currentCloudId = null;
-let editingExpense = null;
-let editingCard = null;
-let editingCategory = null;
+let editingExpense = null, editingCard = null, editingCategory = null;
+let editingAccount = null, editingIncome = null, editingIncomeSource = null;
+let pendingPayment = null; // { cardId, paymentMonth, amount }
+let pendingUndoPayment = null;
 let selectedMonthIdx = 0;
 let firebaseListener = null;
 let isApplyingRemoteUpdate = false;
 let pendingSaveTimeout = null;
-
-// ============================================================================
-// SYNC STATUS
-// ============================================================================
-
-function setSyncStatus(status, text) {
-  const el = document.getElementById('syncStatus');
-  el.className = 'sync-status ' + status;
-  document.getElementById('syncText').textContent = text;
-}
-
-// ============================================================================
-// DEFAULTS
-// ============================================================================
 
 const DEFAULT_CARDS = [
   { id: 'c1', name: 'Yapı Kredi', cutoff: 12, due: 21, limit: 0 },
@@ -1141,11 +910,29 @@ const DEFAULT_CATEGORIES = [
   { id: 'k11', name: 'Teknoloji', icon: '💻' }
 ];
 
-// ============================================================================
-// LOGIN
-// ============================================================================
+const DEFAULT_INCOME_SOURCES = [
+  { id: 'i1', name: 'Maaş', icon: '💼' },
+  { id: 'i2', name: 'Bonus', icon: '🎁' },
+  { id: 'i3', name: 'Ek İş', icon: '💪' },
+  { id: 'i4', name: 'Diğer', icon: '💸' }
+];
 
-let loginMode = 'auto'; // auto, new, existing
+const ACCOUNT_TYPE_ICONS = {
+  bank: '🏦', cash: '💵', gold: '🪙', crypto: '₿', invest: '📈', other: '💼'
+};
+const ACCOUNT_TYPE_NAMES = {
+  bank: 'Banka', cash: 'Nakit', gold: 'Değerli Maden', crypto: 'Kripto', invest: 'Yatırım', other: 'Diğer'
+};
+
+// === SYNC STATUS ===
+function setSyncStatus(status, text) {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status ' + status;
+  document.getElementById('syncText').textContent = text;
+}
+
+// === LOGIN ===
+let loginMode = 'auto';
 
 function waitForFirebase() {
   return new Promise((resolve) => {
@@ -1156,42 +943,28 @@ function waitForFirebase() {
 
 async function init() {
   await waitForFirebase();
-  
   const cloudId = localStorage.getItem(CLOUD_ID_KEY);
   const hashStored = localStorage.getItem(HASH_KEY);
 
-  const loginTitle = document.getElementById('loginTitle');
-  const loginSubtitle = document.getElementById('loginSubtitle');
-  const passwordConfirm = document.getElementById('passwordConfirm');
-  const cloudIdInput = document.getElementById('cloudIdInput');
-  const loginBtn = document.getElementById('loginBtn');
-  const newAccountBtn = document.getElementById('newAccountBtn');
-  const existingAccountBtn = document.getElementById('existingAccountBtn');
-  const loginInfo = document.getElementById('loginInfo');
-
   if (cloudId && hashStored) {
-    // Bu cihaz daha önce kullanılmış
     loginMode = 'returning';
-    loginTitle.textContent = 'Tekrar Hoşgeldin';
-    loginSubtitle.textContent = 'Şifreni girerek devam et';
-    cloudIdInput.style.display = 'none';
-    passwordConfirm.style.display = 'none';
-    loginBtn.textContent = 'Giriş Yap';
-    newAccountBtn.style.display = 'none';
-    existingAccountBtn.style.display = 'none';
+    document.getElementById('loginTitle').textContent = 'Tekrar Hoşgeldin';
+    document.getElementById('loginSubtitle').textContent = 'Şifreni girerek devam et';
+    document.getElementById('cloudIdInput').style.display = 'none';
+    document.getElementById('passwordConfirm').style.display = 'none';
+    document.getElementById('loginBtn').textContent = 'Giriş Yap';
+    document.getElementById('newAccountBtn').style.display = 'none';
+    document.getElementById('existingAccountBtn').style.display = 'none';
   } else {
-    // İlk kullanım
-    loginMode = 'new';
     showNewAccountForm();
   }
-
   document.getElementById('passwordInput').focus();
 }
 
 function showNewAccountForm() {
   loginMode = 'new';
   document.getElementById('loginTitle').textContent = 'Yeni Hesap';
-  document.getElementById('loginSubtitle').textContent = 'Bir şifre belirle, bulut ID otomatik oluşturulacak';
+  document.getElementById('loginSubtitle').textContent = 'Şifre belirle, bulut ID otomatik oluşturulacak';
   document.getElementById('cloudIdInput').style.display = 'none';
   document.getElementById('passwordConfirm').style.display = 'block';
   document.getElementById('loginBtn').textContent = 'Hesap Oluştur';
@@ -1215,23 +988,15 @@ function showExistingAccountForm() {
 
 document.getElementById('newAccountBtn').addEventListener('click', showNewAccountForm);
 document.getElementById('existingAccountBtn').addEventListener('click', showExistingAccountForm);
-
 document.getElementById('loginBtn').addEventListener('click', handleLogin);
 document.getElementById('passwordInput').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
-    if (document.getElementById('passwordConfirm').style.display !== 'none') {
-      document.getElementById('passwordConfirm').focus();
-    } else {
-      handleLogin();
-    }
+    if (document.getElementById('passwordConfirm').style.display !== 'none') document.getElementById('passwordConfirm').focus();
+    else handleLogin();
   }
 });
-document.getElementById('passwordConfirm').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') handleLogin();
-});
-document.getElementById('cloudIdInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') document.getElementById('passwordInput').focus();
-});
+document.getElementById('passwordConfirm').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('cloudIdInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('passwordInput').focus(); });
 
 async function handleLogin() {
   const pwd = document.getElementById('passwordInput').value;
@@ -1240,88 +1005,54 @@ async function handleLogin() {
   const errorEl = document.getElementById('loginError');
   errorEl.textContent = '';
 
-  if (!pwd || pwd.length < 4) {
-    errorEl.textContent = 'Şifre en az 4 karakter olmalı';
-    return;
-  }
-
+  if (!pwd || pwd.length < 4) { errorEl.textContent = 'Şifre en az 4 karakter olmalı'; return; }
   setSyncStatus('syncing', 'Bağlanıyor...');
 
   if (loginMode === 'new') {
-    // Yeni hesap
-    if (pwd !== pwdConfirm) {
-      errorEl.textContent = 'Şifreler eşleşmiyor';
-      return;
-    }
-    
+    if (pwd !== pwdConfirm) { errorEl.textContent = 'Şifreler eşleşmiyor'; return; }
     const newCloudId = generateCloudId();
     const h = await hash(pwd);
-    
     currentCloudId = newCloudId;
     currentPassword = pwd;
-    
     state = {
       cards: [...DEFAULT_CARDS],
       categories: [...DEFAULT_CATEGORIES],
       expenses: [],
+      accounts: [],
+      incomes: [],
+      incomeSources: [...DEFAULT_INCOME_SOURCES],
+      payments: [],
       lastUpdated: Date.now()
     };
-    
-    // İlk kayıt
     try {
       await uploadToFirebase();
       localStorage.setItem(CLOUD_ID_KEY, newCloudId);
       localStorage.setItem(HASH_KEY, h);
       saveLocal();
       enterApp();
-      
-      // Cloud ID'yi göster
-      setTimeout(() => {
-        alert('🎉 Hesabın oluşturuldu!\n\nBULUT ID:\n' + newCloudId + '\n\nBu ID\'yi NOT AL! Başka cihazdan giriş yaparken gerekli olacak.\n\nAyarlar > Hesap kısmından da görebilirsin.');
-      }, 500);
-    } catch (e) {
-      errorEl.textContent = 'Bağlantı hatası: ' + e.message;
-      setSyncStatus('error', 'Hata');
-    }
-    
+      setTimeout(() => { alert('🎉 Hesabın oluşturuldu!\n\nBULUT ID:\n' + newCloudId + '\n\nBu ID\'yi NOT AL! Başka cihazdan giriş yaparken gerekli.'); }, 500);
+    } catch (e) { errorEl.textContent = 'Bağlantı hatası: ' + e.message; setSyncStatus('error', 'Hata'); }
   } else if (loginMode === 'existing') {
-    // Mevcut hesaba bağlan
-    if (!cloudIdEntered) {
-      errorEl.textContent = 'Bulut ID gir';
-      return;
-    }
-    
+    if (!cloudIdEntered) { errorEl.textContent = 'Bulut ID gir'; return; }
     currentCloudId = cloudIdEntered;
     currentPassword = pwd;
-    
     try {
       const data = await downloadFromFirebase();
-      if (!data) {
-        errorEl.textContent = 'Bu Bulut ID\'ye ait veri bulunamadı';
-        setSyncStatus('error', 'Hata');
-        return;
-      }
-      
-      state = data;
+      if (!data) { errorEl.textContent = 'Bu Bulut ID\'ye ait veri bulunamadı'; setSyncStatus('error', 'Hata'); return; }
+      state = migrateState(data);
       const h = await hash(pwd);
       localStorage.setItem(CLOUD_ID_KEY, cloudIdEntered);
       localStorage.setItem(HASH_KEY, h);
       saveLocal();
       enterApp();
     } catch (e) {
-      if (e.message && e.message.includes('decrypt')) {
-        errorEl.textContent = 'Şifre yanlış';
-      } else {
-        errorEl.textContent = 'Bağlantı hatası: ' + e.message;
-      }
+      if (e.message && e.message.includes('decrypt')) errorEl.textContent = 'Şifre yanlış';
+      else errorEl.textContent = 'Bağlantı hatası: ' + e.message;
       setSyncStatus('error', 'Hata');
     }
-    
   } else {
-    // Returning user
     const storedHash = localStorage.getItem(HASH_KEY);
     const inputHash = await hash(pwd);
-    
     if (inputHash !== storedHash) {
       errorEl.textContent = 'Şifre yanlış';
       document.getElementById('passwordInput').value = '';
@@ -1329,39 +1060,40 @@ async function handleLogin() {
       setSyncStatus('error', 'Hata');
       return;
     }
-    
     currentCloudId = localStorage.getItem(CLOUD_ID_KEY);
     currentPassword = pwd;
-    
     try {
-      // Önce yerel veriyi yükle (hızlı)
       const localData = loadLocal();
-      if (localData) state = localData;
-      
-      // Sonra buluttan güncel veriyi al
+      if (localData) state = migrateState(localData);
       const cloudData = await downloadFromFirebase();
       if (cloudData && cloudData.lastUpdated > (state.lastUpdated || 0)) {
-        state = cloudData;
+        state = migrateState(cloudData);
         saveLocal();
       } else if (!cloudData && state.expenses) {
-        // Bulutta yok ama yerelde var - upload et
         await uploadToFirebase();
       }
-      
       enterApp();
     } catch (e) {
-      // Bulut hatası - yerel ile devam
       const localData = loadLocal();
       if (localData) {
-        state = localData;
+        state = migrateState(localData);
         enterApp();
-        showToast('⚠️ Bulut bağlantısı yok, çevrimdışı çalışıyor', 'error');
-      } else {
-        errorEl.textContent = 'Bağlantı hatası, lütfen tekrar dene';
-        setSyncStatus('error', 'Hata');
-      }
+        showToast('⚠️ Çevrimdışı çalışıyor', 'error');
+      } else { errorEl.textContent = 'Bağlantı hatası'; setSyncStatus('error', 'Hata'); }
     }
   }
+}
+
+// Eski sürümlerden gelen verilerde eksik alanları doldurma
+function migrateState(data) {
+  if (!data.cards) data.cards = [...DEFAULT_CARDS];
+  if (!data.categories) data.categories = [...DEFAULT_CATEGORIES];
+  if (!data.expenses) data.expenses = [];
+  if (!data.accounts) data.accounts = [];
+  if (!data.incomes) data.incomes = [];
+  if (!data.incomeSources) data.incomeSources = [...DEFAULT_INCOME_SOURCES];
+  if (!data.payments) data.payments = [];
+  return data;
 }
 
 document.getElementById('resetBtn').addEventListener('click', () => {
@@ -1378,40 +1110,27 @@ function enterApp() {
   document.getElementById('passwordConfirm').value = '';
   document.getElementById('cloudIdInput').value = '';
   document.getElementById('cloudIdDisplay').textContent = currentCloudId;
-  
   setSyncStatus('synced', 'Senkron');
   renderAll();
   startFirebaseListener();
 }
 
-// ============================================================================
-// FIREBASE OPERATIONS
-// ============================================================================
-
+// === FIREBASE ===
 async function uploadToFirebase() {
   if (!currentCloudId || !currentPassword) return;
   setSyncStatus('syncing', 'Yükleniyor...');
-  
   state.lastUpdated = Date.now();
   const encrypted = await encryptData(state, currentPassword);
-  
   const docRef = window.fbDoc(window.fbDb, 'users', currentCloudId);
-  await window.fbSetDoc(docRef, {
-    encrypted: JSON.stringify(encrypted),
-    lastUpdated: state.lastUpdated
-  });
-  
+  await window.fbSetDoc(docRef, { encrypted: JSON.stringify(encrypted), lastUpdated: state.lastUpdated });
   setSyncStatus('synced', 'Senkron');
 }
 
 async function downloadFromFirebase() {
   if (!currentCloudId || !currentPassword) return null;
-  
   const docRef = window.fbDoc(window.fbDb, 'users', currentCloudId);
   const docSnap = await window.fbGetDoc(docRef);
-  
   if (!docSnap.exists()) return null;
-  
   const data = docSnap.data();
   const encrypted = JSON.parse(data.encrypted);
   return await decryptData(encrypted, currentPassword);
@@ -1419,79 +1138,43 @@ async function downloadFromFirebase() {
 
 function startFirebaseListener() {
   if (firebaseListener) firebaseListener();
-  
   const docRef = window.fbDoc(window.fbDb, 'users', currentCloudId);
   firebaseListener = window.fbOnSnapshot(docRef, async (docSnap) => {
     if (!docSnap.exists()) return;
-    
     const data = docSnap.data();
     const remoteUpdated = data.lastUpdated;
-    
-    // Eğer bizim yüklemediğimiz bir değişiklik varsa
     if (remoteUpdated > (state.lastUpdated || 0)) {
       try {
         const encrypted = JSON.parse(data.encrypted);
         const newState = await decryptData(encrypted, currentPassword);
-        
         isApplyingRemoteUpdate = true;
-        state = newState;
+        state = migrateState(newState);
         saveLocal();
         renderAll();
         isApplyingRemoteUpdate = false;
-        
         showToast('☁️ Diğer cihazdan güncellendi', 'success');
-      } catch (e) {
-        console.error('Remote update parse error:', e);
-      }
+      } catch (e) { console.error(e); }
     }
-  }, (error) => {
-    console.error('Listener error:', error);
-    setSyncStatus('error', 'Bağlantı yok');
-  });
+  }, (error) => { console.error(error); setSyncStatus('error', 'Bağlantı yok'); });
 }
 
-// ============================================================================
-// LOCAL STORAGE
-// ============================================================================
-
-function saveLocal() {
-  localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(state));
-}
-
-function loadLocal() {
-  const raw = localStorage.getItem(LOCAL_DATA_KEY);
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
-}
-
-// ============================================================================
-// SAVE STATE (with debounce)
-// ============================================================================
+function saveLocal() { localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(state)); }
+function loadLocal() { const raw = localStorage.getItem(LOCAL_DATA_KEY); if (!raw) return null; try { return JSON.parse(raw); } catch { return null; } }
 
 async function saveState() {
   if (isApplyingRemoteUpdate) return;
-  
   state.lastUpdated = Date.now();
   saveLocal();
-  
-  // Debounce upload (kullanıcı hızlı değişiklikler yapıyorsa toplu gönder)
   if (pendingSaveTimeout) clearTimeout(pendingSaveTimeout);
   pendingSaveTimeout = setTimeout(async () => {
-    try {
-      await uploadToFirebase();
-    } catch (e) {
-      console.error('Upload error:', e);
-      setSyncStatus('error', 'Yüklenemedi');
-      // 30 saniye sonra tekrar dene
+    try { await uploadToFirebase(); } catch (e) {
+      console.error(e); setSyncStatus('error', 'Yüklenemedi');
       setTimeout(() => uploadToFirebase().catch(()=>{}), 30000);
     }
   }, 500);
 }
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
+// === HELPERS ===
 function getPaymentMonth(expense) {
   const card = state.cards.find(c => c.id === expense.cardId);
   if (!card) return null;
@@ -1513,8 +1196,7 @@ function formatMonthYear(d) { return d.toLocaleDateString('tr-TR', { month: 'lon
 
 function getDueDate(card, monthYearStr) {
   const [y, m] = monthYearStr.split('-').map(Number);
-  let dueMonth = m;
-  let dueYear = y;
+  let dueMonth = m, dueYear = y;
   if (card.due < card.cutoff) {
     dueMonth = m + 1;
     if (dueMonth > 12) { dueMonth = 1; dueYear++; }
@@ -1522,51 +1204,84 @@ function getDueDate(card, monthYearStr) {
   return new Date(dueYear, dueMonth - 1, Math.min(card.due, new Date(dueYear, dueMonth, 0).getDate()));
 }
 
-// ============================================================================
-// RENDER
-// ============================================================================
+// Bir kartın belirli ay için ödenecek tutarını hesapla
+function calculateCardPayment(cardId, paymentMonth) {
+  let total = 0;
+  state.expenses.forEach(e => {
+    if (e.cardId === cardId && getPaymentMonth(e) === paymentMonth) {
+      total += e.amount / e.taksit;
+    }
+  });
+  return total;
+}
 
+// Bir kart-ay kombinasyonu ödendi mi?
+function isPaymentMade(cardId, paymentMonth) {
+  return state.payments.find(p => p.cardId === cardId && p.paymentMonth === paymentMonth);
+}
+
+// Toplam varlık
+function getTotalBalance() {
+  return state.accounts.reduce((sum, a) => sum + a.balance, 0);
+}
+
+// === RENDER ===
 function renderAll() {
   renderHeader();
   renderHome();
+  renderAccounts();
   renderExpenses();
   renderCalendar();
-  renderStats();
   renderCardsList();
   renderCategoriesList();
+  renderIncomeSourcesList();
   populateExpenseFormDropdowns();
+  populateIncomeFormDropdowns();
 }
 
 function renderHeader() {
   const today = new Date();
-  document.getElementById('todayDate').textContent = today.toLocaleDateString('tr-TR', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-  });
+  document.getElementById('todayDate').textContent = today.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function renderHome() {
   const today = new Date();
   const thisMonthKey = getMonthKey(today);
-  const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const lastMonthKey = getMonthKey(lastMonthDate);
+  const lastMonthKey = getMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
 
-  let totalPayment = 0;
-  state.expenses.forEach(e => { if (getPaymentMonth(e) === thisMonthKey) totalPayment += (e.amount / e.taksit); });
+  // Net varlık
+  const totalBalance = getTotalBalance();
+  document.getElementById('netTotal').textContent = formatCurrency(totalBalance);
 
+  // Bu ay ödenecek (henüz ödenmemiş kartlar - gelecek aylar dahil değil, sadece bu ay vadeli)
+  let totalDebtThisMonth = 0;
+  state.cards.forEach(card => {
+    const dueDate = getDueDate(card, thisMonthKey);
+    if (dueDate.getMonth() === today.getMonth() && dueDate.getFullYear() === today.getFullYear()) {
+      const payment = calculateCardPayment(card.id, thisMonthKey);
+      const paid = isPaymentMade(card.id, thisMonthKey);
+      if (payment > 0 && !paid) totalDebtThisMonth += payment;
+    }
+  });
+  document.getElementById('netDebt').textContent = formatCurrency(totalDebtThisMonth);
+  document.getElementById('netProjected').textContent = formatCurrency(totalBalance - totalDebtThisMonth);
+
+  // Harcama
   let monthSpending = 0, monthCount = 0;
   state.expenses.forEach(e => { if (getExpenseMonth(e) === thisMonthKey) { monthSpending += e.amount; monthCount++; } });
-
-  let lastMonthSpending = 0;
-  state.expenses.forEach(e => { if (getExpenseMonth(e) === lastMonthKey) lastMonthSpending += e.amount; });
-
-  const activeTaksit = state.expenses.filter(e => e.taksit > 1).length;
-
-  document.getElementById('stat-payment').textContent = formatCurrency(totalPayment);
-  document.getElementById('stat-payment-meta').textContent = state.cards.length + ' kart';
   document.getElementById('stat-spending').textContent = formatCurrency(monthSpending);
   document.getElementById('stat-spending-meta').textContent = monthCount + ' işlem';
+
+  // Gelir
+  let monthIncomeAmount = 0, incomeCount = 0;
+  state.incomes.forEach(i => { if (getMonthKey(new Date(i.date)) === thisMonthKey) { monthIncomeAmount += i.amount; incomeCount++; } });
+  document.getElementById('stat-income').textContent = formatCurrency(monthIncomeAmount);
+  document.getElementById('stat-income-meta').textContent = incomeCount + ' işlem';
+
+  // Geçen ay
+  let lastMonthSpending = 0;
+  state.expenses.forEach(e => { if (getExpenseMonth(e) === lastMonthKey) lastMonthSpending += e.amount; });
   document.getElementById('stat-lastmonth').textContent = formatCurrency(lastMonthSpending);
-  document.getElementById('stat-taksit').textContent = activeTaksit;
 
   const trendEl = document.getElementById('stat-trend');
   if (lastMonthSpending > 0) {
@@ -1574,18 +1289,19 @@ function renderHome() {
     if (Math.abs(diff) < 1) trendEl.textContent = '➡️ Aynı';
     else if (diff > 0) trendEl.innerHTML = '<span style="color:var(--danger)">📈 +' + diff.toFixed(0) + '%</span>';
     else trendEl.innerHTML = '<span style="color:var(--success)">📉 ' + diff.toFixed(0) + '%</span>';
-  } else {
-    trendEl.textContent = '—';
-  }
+  } else trendEl.textContent = '—';
 
-  renderPaymentList();
+  document.getElementById('stat-taksit').textContent = state.expenses.filter(e => e.taksit > 1).length;
+
+  renderUpcomingPayments();
+  renderHomeAccounts();
   renderCategoryBars();
   renderTrendChart();
 }
 
-function renderPaymentList() {
+// En yakın 4 ödemeyi göster (ödenmemiş + ödenmiş karışık olabilir)
+function renderUpcomingPayments() {
   const today = new Date();
-  const thisMonthKey = getMonthKey(today);
   const list = document.getElementById('paymentList');
   list.innerHTML = '';
 
@@ -1594,29 +1310,201 @@ function renderPaymentList() {
     return;
   }
 
-  const cardPayments = state.cards.map(card => {
-    let total = 0;
-    state.expenses.forEach(e => { if (e.cardId === card.id && getPaymentMonth(e) === thisMonthKey) total += e.amount / e.taksit; });
-    const dueDate = getDueDate(card, thisMonthKey);
-    const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-    return { card, total, dueDate, daysLeft };
-  }).sort((a, b) => a.dueDate - b.dueDate);
+  // Önümüzdeki 12 ay için tüm ödeme dönemlerini hesapla
+  const allPayments = [];
+  for (let i = 0; i < 12; i++) {
+    const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const monthKey = getMonthKey(monthDate);
+    state.cards.forEach(card => {
+      const amount = calculateCardPayment(card.id, monthKey);
+      const paid = isPaymentMade(card.id, monthKey);
+      const dueDate = getDueDate(card, monthKey);
+      
+      // Ödeme yoksa ve ödenmemiş ise gösterme
+      if (amount > 0 || paid) {
+        allPayments.push({ card, monthKey, amount: paid ? paid.amount : amount, dueDate, paid });
+      }
+    });
+  }
 
-  cardPayments.forEach(({ card, total, dueDate, daysLeft }) => {
-    const urgentClass = daysLeft < 0 ? '' : (daysLeft <= 3 ? 'urgent' : (daysLeft <= 7 ? 'warning' : ''));
-    let daysText;
-    if (daysLeft < 0) daysText = Math.abs(daysLeft) + ' gün geçti';
-    else if (daysLeft === 0) daysText = 'Bugün son gün!';
-    else if (daysLeft === 1) daysText = 'Yarın son gün';
-    else daysText = daysLeft + ' gün kaldı';
+  // Geçmiş ay ödenmemişleri de ekle (en fazla 6 ay geriye)
+  for (let i = 1; i <= 6; i++) {
+    const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthKey = getMonthKey(monthDate);
+    state.cards.forEach(card => {
+      const amount = calculateCardPayment(card.id, monthKey);
+      const paid = isPaymentMade(card.id, monthKey);
+      // Sadece ödenmemiş geçmiş ödemeler
+      if (amount > 0 && !paid) {
+        const dueDate = getDueDate(card, monthKey);
+        allPayments.push({ card, monthKey, amount, dueDate, paid: null });
+      }
+    });
+  }
+
+  // Sıralama: ödenmemiş geçmiş > ödenmemiş güncel/gelecek > ödenmiş
+  allPayments.sort((a, b) => {
+    const aOverdue = !a.paid && a.dueDate < today;
+    const bOverdue = !b.paid && b.dueDate < today;
+    if (aOverdue && !bOverdue) return -1;
+    if (!aOverdue && bOverdue) return 1;
+    return a.dueDate - b.dueDate;
+  });
+
+  // En yakın 4'ü göster
+  const visible = allPayments.slice(0, 4);
+  
+  if (visible.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="icon">✨</div><div class="text">Yaklaşan ödeme yok</div></div>';
+    return;
+  }
+
+  visible.forEach(({ card, monthKey, amount, dueDate, paid }) => {
+    const diffMs = dueDate - today;
+    const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     
+    let cssClass = '';
+    let daysText = '';
+    
+    if (paid) {
+      cssClass = 'paid';
+      daysText = '✓ Ödendi';
+    } else if (daysLeft < 0) {
+      cssClass = 'overdue';
+      daysText = Math.abs(daysLeft) + ' gün gecikti!';
+    } else if (daysLeft <= 3) {
+      cssClass = 'urgent';
+      daysText = daysLeft === 0 ? 'Bugün son gün!' : (daysLeft === 1 ? 'Yarın' : daysLeft + ' gün');
+    } else if (daysLeft <= 7) {
+      cssClass = 'warning';
+      daysText = daysLeft + ' gün kaldı';
+    } else {
+      daysText = daysLeft + ' gün';
+    }
+
+    const monthLabel = new Date(monthKey + '-01').toLocaleDateString('tr-TR', { month: 'short' }).replace('.','');
+    const yearLabel = monthKey.split('-')[0].slice(-2);
+
+    let payButton = '';
+    let paidMeta = '';
+    if (paid) {
+      const account = state.accounts.find(a => a.id === paid.accountId);
+      paidMeta = `<div class="paid-meta">${account ? account.name : '?'} hesabından ${formatDate(paid.date)}</div>`;
+      payButton = `<button class="pay-btn unpaid" onclick="askUndoPayment('${paid.id}')">↩ Geri Al</button>`;
+    } else {
+      payButton = `<button class="pay-btn" onclick="askPayment('${card.id}','${monthKey}',${amount})">✓ Ödendi</button>`;
+    }
+
     list.innerHTML += `
-      <div class="payment-item ${urgentClass}">
-        <div class="day-badge"><div class="num">${dueDate.getDate()}</div><div class="month">${dueDate.toLocaleDateString('tr-TR', { month: 'short' }).replace('.','')}</div></div>
-        <div class="payment-info"><div class="name">${card.name}</div><div class="meta">Kesim: ${card.cutoff} • Ödeme: ${card.due}</div></div>
-        <div class="payment-amount">${formatCurrency(total)}<span class="days">${daysText}</span></div>
+      <div class="payment-item ${cssClass}">
+        <div class="day-badge"><div class="num">${dueDate.getDate()}</div><div class="month">${monthLabel} ${yearLabel}</div></div>
+        <div class="payment-info">
+          <div class="name">${card.name}</div>
+          <div class="meta">Kesim: ${card.cutoff} • Ödeme: ${card.due}</div>
+          ${paidMeta}
+        </div>
+        <div class="payment-amount ${paid ? 'paid-amount' : ''}">
+          ${formatCurrency(amount)}
+          <span class="days ${daysLeft < 0 && !paid ? 'overdue-text' : ''}">${daysText}</span>
+        </div>
+        ${payButton}
       </div>`;
   });
+}
+
+function renderHomeAccounts() {
+  const list = document.getElementById('homeAccounts');
+  list.innerHTML = '';
+  if (state.accounts.length === 0) {
+    list.innerHTML = '<div class="empty" style="padding:20px;"><div class="icon">💰</div><div class="text">Hesap eklenmemiş</div><button class="btn btn-primary" style="margin-top:12px;" onclick="goToPage(\'accounts\')">İlk Hesabı Ekle</button></div>';
+    return;
+  }
+  state.accounts.slice(0, 4).forEach(acc => {
+    list.innerHTML += `
+      <div class="account-item" onclick="editAccount('${acc.id}')">
+        <div class="account-icon">${ACCOUNT_TYPE_ICONS[acc.type] || '💼'}</div>
+        <div class="account-info">
+          <div class="account-name">${acc.name}</div>
+          <div class="account-type">${ACCOUNT_TYPE_NAMES[acc.type] || 'Diğer'}</div>
+        </div>
+        <div class="account-balance ${acc.balance < 0 ? 'negative' : ''}">${formatCurrency(acc.balance)}</div>
+      </div>`;
+  });
+}
+
+function renderAccounts() {
+  document.getElementById('totalBalance').textContent = formatCurrency(getTotalBalance());
+  document.getElementById('accountCount').textContent = state.accounts.length;
+  
+  const today = new Date();
+  const thisMonthKey = getMonthKey(today);
+  let monthIncome = 0;
+  state.incomes.forEach(i => { if (getMonthKey(new Date(i.date)) === thisMonthKey) monthIncome += i.amount; });
+  document.getElementById('monthIncome').textContent = formatCurrency(monthIncome);
+
+  // Tüm hesaplar
+  const list = document.getElementById('allAccounts');
+  list.innerHTML = '';
+  if (state.accounts.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="icon">💰</div><div class="text">Henüz hesap eklenmemiş</div></div>';
+  } else {
+    state.accounts.forEach(acc => {
+      list.innerHTML += `
+        <div class="account-item" onclick="editAccount('${acc.id}')">
+          <div class="account-icon">${ACCOUNT_TYPE_ICONS[acc.type] || '💼'}</div>
+          <div class="account-info">
+            <div class="account-name">${acc.name}</div>
+            <div class="account-type">${ACCOUNT_TYPE_NAMES[acc.type] || 'Diğer'}</div>
+          </div>
+          <div class="account-balance ${acc.balance < 0 ? 'negative' : ''}">${formatCurrency(acc.balance)}</div>
+        </div>`;
+    });
+  }
+
+  // Son gelirler
+  const incList = document.getElementById('incomeList');
+  incList.innerHTML = '';
+  const recentIncomes = [...state.incomes].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+  if (recentIncomes.length === 0) {
+    incList.innerHTML = '<div class="empty" style="padding:20px;"><div class="text">Henüz gelir eklenmemiş</div></div>';
+  } else {
+    recentIncomes.forEach(inc => {
+      const src = state.incomeSources.find(s => s.id === inc.sourceId);
+      const acc = state.accounts.find(a => a.id === inc.accountId);
+      incList.innerHTML += `
+        <div class="history-item" onclick="editIncome('${inc.id}')" style="cursor:pointer;">
+          <div class="history-icon">${src ? src.icon : '💰'}</div>
+          <div class="history-info">
+            <div class="title">${src ? src.name : 'Gelir'}${inc.note ? ' • ' + inc.note : ''}</div>
+            <div class="meta">${formatDate(inc.date)} • ${acc ? acc.name : '?'}</div>
+          </div>
+          <div class="history-amount">+${formatCurrency(inc.amount)}</div>
+        </div>`;
+    });
+  }
+
+  // Son kart ödemeleri
+  const payList = document.getElementById('paymentHistoryList');
+  payList.innerHTML = '';
+  const recentPayments = [...state.payments].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+  if (recentPayments.length === 0) {
+    payList.innerHTML = '<div class="empty" style="padding:20px;"><div class="text">Henüz ödeme kaydı yok</div></div>';
+  } else {
+    recentPayments.forEach(pay => {
+      const card = state.cards.find(c => c.id === pay.cardId);
+      const acc = state.accounts.find(a => a.id === pay.accountId);
+      const monthLabel = new Date(pay.paymentMonth + '-01').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+      payList.innerHTML += `
+        <div class="history-item">
+          <div class="history-icon" style="background:rgba(245,158,11,0.15); color:var(--accent);">💳</div>
+          <div class="history-info">
+            <div class="title">${card ? card.name : '?'} - ${monthLabel}</div>
+            <div class="meta">${formatDate(pay.date)} • ${acc ? acc.name : '?'} hesabından</div>
+          </div>
+          <div class="history-amount" style="color:var(--accent);">-${formatCurrency(pay.amount)}</div>
+        </div>`;
+    });
+  }
 }
 
 function renderCategoryBars() {
@@ -1624,39 +1512,22 @@ function renderCategoryBars() {
   const thisMonthKey = getMonthKey(today);
   const list = document.getElementById('catList');
   list.innerHTML = '';
-
   const categoryTotals = {};
   state.expenses.forEach(e => { if (getExpenseMonth(e) === thisMonthKey) categoryTotals[e.categoryId] = (categoryTotals[e.categoryId] || 0) + e.amount; });
-
-  const sorted = Object.entries(categoryTotals)
-    .map(([catId, total]) => ({ cat: state.categories.find(c => c.id === catId), total }))
-    .filter(x => x.cat)
-    .sort((a, b) => b.total - a.total);
-
-  if (sorted.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">📊</div><div class="text">Bu ay henüz harcama yok</div></div>';
-    return;
-  }
-
+  const sorted = Object.entries(categoryTotals).map(([catId, total]) => ({ cat: state.categories.find(c => c.id === catId), total })).filter(x => x.cat).sort((a, b) => b.total - a.total);
+  if (sorted.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">📊</div><div class="text">Bu ay henüz harcama yok</div></div>'; return; }
   const grandTotal = sorted.reduce((sum, x) => sum + x.total, 0);
   const colors = ['var(--accent)', 'var(--primary)', 'var(--success)', 'var(--purple)', 'var(--pink)', 'var(--teal)', 'var(--warning)', 'var(--danger)'];
-
   sorted.forEach((item, idx) => {
     const pct = (item.total / grandTotal) * 100;
-    list.innerHTML += `
-      <div class="cat-item">
-        <div class="cat-row"><span class="cat-name">${item.cat.icon} ${item.cat.name}</span><span class="cat-amount">${formatCurrency(item.total)} • ${pct.toFixed(0)}%</span></div>
-        <div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%; background:${colors[idx % colors.length]}"></div></div>
-      </div>`;
+    list.innerHTML += `<div><div class="cat-row"><span class="cat-name">${item.cat.icon} ${item.cat.name}</span><span class="cat-amount">${formatCurrency(item.total)} • ${pct.toFixed(0)}%</span></div><div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%; background:${colors[idx % colors.length]}"></div></div></div>`;
   });
 }
 
 let trendChart = null;
 function renderTrendChart() {
   const today = new Date();
-  const labels = [];
-  const data = [];
-
+  const labels = [], data = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const key = getMonthKey(d);
@@ -1665,20 +1536,12 @@ function renderTrendChart() {
     labels.push(d.toLocaleDateString('tr-TR', { month: 'short' }));
     data.push(total);
   }
-
   const ctx = document.getElementById('trendChart').getContext('2d');
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets: [{ data, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#f59e0b', pointBorderColor: '#0a0e1a', pointBorderWidth: 2, pointRadius: 5 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-      }
-    }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
   });
 }
 
@@ -1686,30 +1549,18 @@ let currentFilter = 'all';
 function renderExpenses() {
   const list = document.getElementById('expenseList');
   list.innerHTML = '';
-
   let filtered = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
   const today = new Date();
   const thisMonthKey = getMonthKey(today);
   const lastMonthKey = getMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
-
   if (currentFilter === 'thismonth') filtered = filtered.filter(e => getExpenseMonth(e) === thisMonthKey);
   else if (currentFilter === 'lastmonth') filtered = filtered.filter(e => getExpenseMonth(e) === lastMonthKey);
   else if (currentFilter === 'taksit') filtered = filtered.filter(e => e.taksit > 1);
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Henüz harcama yok</div></div>';
-    return;
-  }
-
+  if (filtered.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Henüz harcama yok</div></div>'; return; }
   filtered.forEach(e => {
     const card = state.cards.find(c => c.id === e.cardId);
     const cat = state.categories.find(c => c.id === e.categoryId);
-    list.innerHTML += `
-      <div class="expense-item" onclick="editExpense('${e.id}')">
-        <div class="expense-icon">${cat ? cat.icon : '💸'}</div>
-        <div class="expense-info"><div class="desc">${e.desc || (cat ? cat.name : 'Harcama')}</div><div class="meta">${formatDate(e.date)} • ${card ? card.name : '?'} • ${cat ? cat.name : '?'}</div></div>
-        <div class="expense-amount">${formatCurrency(e.amount)}${e.taksit > 1 ? `<span class="taksit">${e.taksit} taksit</span>` : ''}</div>
-      </div>`;
+    list.innerHTML += `<div class="expense-item" onclick="editExpense('${e.id}')"><div class="expense-icon">${cat ? cat.icon : '💸'}</div><div class="expense-info"><div class="desc">${e.desc || (cat ? cat.name : 'Harcama')}</div><div class="meta">${formatDate(e.date)} • ${card ? card.name : '?'} • ${cat ? cat.name : '?'}</div></div><div class="expense-amount">${formatCurrency(e.amount)}${e.taksit > 1 ? `<span class="taksit">${e.taksit} taksit</span>` : ''}</div></div>`;
   });
 }
 
@@ -1726,30 +1577,17 @@ function renderCalendar() {
   const selector = document.getElementById('monthSelector');
   selector.innerHTML = '';
   const today = new Date();
-
   for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const key = getMonthKey(d);
     let total = 0;
-    state.expenses.forEach(e => { if (getPaymentMonth(e) === key) total += e.amount / e.taksit; });
-
+    state.cards.forEach(card => { total += calculateCardPayment(card.id, key); });
     const isActive = i === selectedMonthIdx;
-    const futureCls = i > 0 ? 'future' : '';
-    selector.innerHTML += `
-      <div class="month-pill ${isActive ? 'active' : ''} ${futureCls}" data-idx="${i}">
-        <span class="label">${d.toLocaleDateString('tr-TR', { month: 'short' })}</span>
-        <span class="amount">${total > 0 ? formatCurrency(total) : '—'}</span>
-      </div>`;
+    selector.innerHTML += `<div class="month-pill ${isActive ? 'active' : ''} ${i > 0 ? 'future' : ''}" data-idx="${i}"><span class="label">${d.toLocaleDateString('tr-TR', { month: 'short' })}</span><span class="amount">${total > 0 ? formatCurrency(total) : '—'}</span></div>`;
   }
-
   document.querySelectorAll('.month-pill').forEach(p => {
-    p.addEventListener('click', () => {
-      selectedMonthIdx = parseInt(p.dataset.idx);
-      renderCalendar();
-      renderMonthDetail();
-    });
+    p.addEventListener('click', () => { selectedMonthIdx = parseInt(p.dataset.idx); renderCalendar(); renderMonthDetail(); });
   });
-
   renderMonthDetail();
   renderForecastChart();
 }
@@ -1759,24 +1597,40 @@ function renderMonthDetail() {
   const target = new Date(today.getFullYear(), today.getMonth() + selectedMonthIdx, 1);
   const key = getMonthKey(target);
   document.getElementById('selectedMonthLabel').textContent = formatMonthYear(target).toUpperCase();
-
   const list = document.getElementById('monthDetail');
   list.innerHTML = '';
-
-  if (state.cards.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart yok</div></div>';
-    return;
-  }
-
+  if (state.cards.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart yok</div></div>'; return; }
   state.cards.forEach(card => {
-    let total = 0, count = 0;
-    state.expenses.forEach(e => { if (e.cardId === card.id && getPaymentMonth(e) === key) { total += e.amount / e.taksit; count++; } });
+    const total = calculateCardPayment(card.id, key);
+    let count = 0;
+    state.expenses.forEach(e => { if (e.cardId === card.id && getPaymentMonth(e) === key) count++; });
     const dueDate = getDueDate(card, key);
+    const paid = isPaymentMade(card.id, key);
+    
+    let payButton = '';
+    let paidMeta = '';
+    if (paid) {
+      const account = state.accounts.find(a => a.id === paid.accountId);
+      paidMeta = `<div class="paid-meta">${account ? account.name : '?'} hesabından</div>`;
+      payButton = `<button class="pay-btn unpaid" onclick="askUndoPayment('${paid.id}')">↩</button>`;
+    } else if (total > 0) {
+      payButton = `<button class="pay-btn" onclick="askPayment('${card.id}','${key}',${total})">✓</button>`;
+    } else {
+      payButton = '<div></div>';
+    }
+    
+    const cssClass = paid ? 'paid' : '';
+    
     list.innerHTML += `
-      <div class="payment-item">
+      <div class="payment-item ${cssClass}">
         <div class="day-badge"><div class="num">${dueDate.getDate()}</div><div class="month">${dueDate.toLocaleDateString('tr-TR', { month: 'short' }).replace('.','')}</div></div>
-        <div class="payment-info"><div class="name">${card.name}</div><div class="meta">${count} işlem${count > 0 ? '' : ' • boş'}</div></div>
+        <div class="payment-info">
+          <div class="name">${card.name}</div>
+          <div class="meta">${count} işlem${count > 0 ? '' : ' • boş'}</div>
+          ${paidMeta}
+        </div>
         <div class="payment-amount">${formatCurrency(total)}</div>
+        ${payButton}
       </div>`;
   });
 }
@@ -1789,7 +1643,7 @@ function renderForecastChart() {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const key = getMonthKey(d);
     let total = 0;
-    state.expenses.forEach(e => { if (getPaymentMonth(e) === key) total += e.amount / e.taksit; });
+    state.cards.forEach(card => { total += calculateCardPayment(card.id, key); });
     labels.push(d.toLocaleDateString('tr-TR', { month: 'short' }));
     data.push(total);
   }
@@ -1798,138 +1652,60 @@ function renderForecastChart() {
   forecastChart = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [{ data, backgroundColor: data.map((_, i) => i === 0 ? '#f59e0b' : 'rgba(96,165,250,0.6)'), borderRadius: 8 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-      }
-    }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
   });
-}
-
-let catChart = null, cardChart = null;
-function renderStats() {
-  const today = new Date();
-  const thisMonthKey = getMonthKey(today);
-
-  const catTotals = {};
-  state.expenses.forEach(e => { if (getExpenseMonth(e) === thisMonthKey) catTotals[e.categoryId] = (catTotals[e.categoryId] || 0) + e.amount; });
-  const catSorted = Object.entries(catTotals)
-    .map(([id, total]) => ({ cat: state.categories.find(c => c.id === id), total }))
-    .filter(x => x.cat).sort((a, b) => b.total - a.total);
-
-  const catCtx = document.getElementById('catChart').getContext('2d');
-  if (catChart) catChart.destroy();
-  catChart = new Chart(catCtx, {
-    type: 'doughnut',
-    data: {
-      labels: catSorted.map(x => x.cat.icon + ' ' + x.cat.name),
-      datasets: [{ data: catSorted.map(x => x.total), backgroundColor: ['#f59e0b', '#60a5fa', '#34d399', '#a78bfa', '#f472b6', '#2dd4bf', '#fb923c', '#f87171', '#fbbf24', '#3b82f6'], borderWidth: 0 }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { color: '#e8edf5', font: { size: 11 }, boxWidth: 12 } } } }
-  });
-
-  const cardTotals = state.cards.map(card => {
-    let total = 0;
-    state.expenses.forEach(e => { if (e.cardId === card.id && getExpenseMonth(e) === thisMonthKey) total += e.amount; });
-    return { card, total };
-  });
-
-  const cardCtx = document.getElementById('cardChart').getContext('2d');
-  if (cardChart) cardChart.destroy();
-  cardChart = new Chart(cardCtx, {
-    type: 'bar',
-    data: { labels: cardTotals.map(x => x.card.name), datasets: [{ data: cardTotals.map(x => x.total), backgroundColor: ['#f59e0b', '#60a5fa', '#a78bfa', '#34d399'], borderRadius: 8 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(1) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-        y: { ticks: { color: '#e8edf5' }, grid: { display: false } }
-      }
-    }
-  });
-
-  const totalAllTime = state.expenses.reduce((sum, e) => sum + e.amount, 0);
-  const totalTransactions = state.expenses.length;
-  const avgTransaction = totalTransactions > 0 ? totalAllTime / totalTransactions : 0;
-  const allCatTotals = {};
-  state.expenses.forEach(e => { allCatTotals[e.categoryId] = (allCatTotals[e.categoryId] || 0) + e.amount; });
-  const topCat = Object.entries(allCatTotals).sort((a,b) => b[1]-a[1])[0];
-  const topCatObj = topCat ? state.categories.find(c => c.id === topCat[0]) : null;
-
-  document.getElementById('generalStats').innerHTML = `
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Toplam Harcama</div><div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${formatCurrency(totalAllTime)}</div></div>
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Toplam İşlem</div><div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${totalTransactions}</div></div>
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Ortalama İşlem</div><div style="font-family:'Fraunces',serif; font-size:20px; font-weight:600; margin-top:4px;">${formatCurrency(avgTransaction)}</div></div>
-      <div style="padding:14px; background:var(--bg-2); border-radius:12px;"><div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">En Çok Harcanan</div><div style="font-family:'Fraunces',serif; font-size:18px; font-weight:600; margin-top:4px;">${topCatObj ? topCatObj.icon + ' ' + topCatObj.name : '—'}</div></div>
-    </div>`;
 }
 
 function renderCardsList() {
   const list = document.getElementById('cardList');
   list.innerHTML = '';
-  if (state.cards.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart eklenmemiş</div></div>';
-    return;
-  }
+  if (state.cards.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart eklenmemiş</div></div>'; return; }
   state.cards.forEach(card => {
-    list.innerHTML += `
-      <div class="mgmt-card">
-        <div class="mgmt-row">
-          <div class="mgmt-name">${card.name}</div>
-          <div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCard('${card.id}')">✏️</div></div>
-        </div>
-        <div class="mgmt-detail">
-          <span>📅 Kesim: ${card.cutoff}</span>
-          <span>💰 Ödeme: ${card.due}</span>
-          ${card.limit > 0 ? '<span>💎 Limit: ' + formatCurrency(card.limit) + '</span>' : ''}
-        </div>
-      </div>`;
+    list.innerHTML += `<div class="mgmt-card"><div class="mgmt-row"><div class="mgmt-name">${card.name}</div><div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCard('${card.id}')">✏️</div></div></div><div class="mgmt-detail"><span>📅 Kesim: ${card.cutoff}</span><span>💰 Ödeme: ${card.due}</span>${card.limit > 0 ? '<span>💎 Limit: ' + formatCurrency(card.limit) + '</span>' : ''}</div></div>`;
   });
 }
 
 function renderCategoriesList() {
   const list = document.getElementById('categoryList');
   list.innerHTML = '';
-  if (state.categories.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">🏷️</div><div class="text">Kategori eklenmemiş</div></div>';
-    return;
-  }
+  if (state.categories.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">🏷️</div><div class="text">Kategori eklenmemiş</div></div>'; return; }
   state.categories.forEach(cat => {
-    list.innerHTML += `
-      <div class="mgmt-card">
-        <div class="mgmt-row" style="margin-bottom:0;">
-          <div class="mgmt-name" style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">${cat.icon}</span><span>${cat.name}</span></div>
-          <div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCategory('${cat.id}')">✏️</div></div>
-        </div>
-      </div>`;
+    list.innerHTML += `<div class="mgmt-card"><div class="mgmt-row" style="margin-bottom:0;"><div class="mgmt-name" style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">${cat.icon}</span><span>${cat.name}</span></div><div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCategory('${cat.id}')">✏️</div></div></div></div>`;
+  });
+}
+
+function renderIncomeSourcesList() {
+  const list = document.getElementById('incomeSourceList');
+  list.innerHTML = '';
+  if (state.incomeSources.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">📥</div><div class="text">Gelir kaynağı yok</div></div>'; return; }
+  state.incomeSources.forEach(src => {
+    list.innerHTML += `<div class="mgmt-card"><div class="mgmt-row" style="margin-bottom:0;"><div class="mgmt-name" style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">${src.icon}</span><span>${src.name}</span></div><div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editIncomeSource('${src.id}')">✏️</div></div></div></div>`;
   });
 }
 
 function populateExpenseFormDropdowns() {
-  const cardSelect = document.getElementById('exp-card');
-  const catSelect = document.getElementById('exp-category');
-  cardSelect.innerHTML = state.cards.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  catSelect.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('exp-card').innerHTML = state.cards.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('exp-category').innerHTML = state.categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
 }
 
-// ============================================================================
-// NAV
-// ============================================================================
+function populateIncomeFormDropdowns() {
+  document.getElementById('inc-source').innerHTML = state.incomeSources.map(s => `<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+  document.getElementById('inc-account').innerHTML = state.accounts.map(a => `<option value="${a.id}">${ACCOUNT_TYPE_ICONS[a.type] || '💼'} ${a.name}</option>`).join('');
+}
+
+// === NAV ===
+function goToPage(page) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.nav-btn[data-page="${page}"]`);
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  window.scrollTo(0, 0);
+}
+window.goToPage = goToPage;
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const page = btn.dataset.page;
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + page).classList.add('active');
-    window.scrollTo(0, 0);
-  });
+  btn.addEventListener('click', () => goToPage(btn.dataset.page));
 });
 
 document.querySelectorAll('.mgmt-tab').forEach(tab => {
@@ -1941,10 +1717,16 @@ document.querySelectorAll('.mgmt-tab').forEach(tab => {
   });
 });
 
-// ============================================================================
-// MODALS
-// ============================================================================
+// === FAB ===
+let fabOpen = false;
+function toggleFab() {
+  fabOpen = !fabOpen;
+  document.getElementById('fabMain').classList.toggle('active', fabOpen);
+  document.getElementById('fabMini').classList.toggle('show', fabOpen);
+}
+window.toggleFab = toggleFab;
 
+// === MODALS ===
 function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 window.closeModal = closeModal;
@@ -1953,14 +1735,15 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
 });
 
+// EXPENSE
 function openExpenseModal() {
-  if (state.cards.length === 0) { showToast('Önce en az bir kart ekle', 'error'); return; }
-  if (state.categories.length === 0) { showToast('Önce en az bir kategori ekle', 'error'); return; }
+  if (fabOpen) toggleFab();
+  if (state.cards.length === 0) { showToast('Önce kart ekle', 'error'); return; }
+  if (state.categories.length === 0) { showToast('Önce kategori ekle', 'error'); return; }
   editingExpense = null;
   document.getElementById('expenseModalTitle').textContent = 'Yeni Harcama';
   document.getElementById('exp-delete-btn').style.display = 'none';
-  const today = new Date();
-  document.getElementById('exp-date').value = today.toISOString().split('T')[0];
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('exp-desc').value = '';
   document.getElementById('exp-amount').value = '';
   document.getElementById('exp-taksit').value = 1;
@@ -2019,6 +1802,7 @@ async function deleteExpense() {
 }
 window.deleteExpense = deleteExpense;
 
+// CARD
 function openCardModal() {
   editingCard = null;
   document.getElementById('cardModalTitle').textContent = 'Yeni Kart';
@@ -2051,8 +1835,8 @@ async function saveCard() {
   const due = parseInt(document.getElementById('card-due').value);
   const limit = parseFloat(document.getElementById('card-limit').value) || 0;
   if (!name) { showToast('Kart adı girin', 'error'); return; }
-  if (!cutoff || cutoff < 1 || cutoff > 31) { showToast('Geçerli kesim günü (1-31)', 'error'); return; }
-  if (!due || due < 1 || due > 31) { showToast('Geçerli ödeme günü (1-31)', 'error'); return; }
+  if (!cutoff || cutoff < 1 || cutoff > 31) { showToast('Geçerli kesim günü', 'error'); return; }
+  if (!due || due < 1 || due > 31) { showToast('Geçerli ödeme günü', 'error'); return; }
   if (editingCard) Object.assign(editingCard, { name, cutoff, due, limit });
   else state.cards.push({ id: 'c' + Date.now(), name, cutoff, due, limit });
   await saveState();
@@ -2066,11 +1850,10 @@ async function deleteCard() {
   if (!editingCard) return;
   const usedBy = state.expenses.filter(e => e.cardId === editingCard.id).length;
   if (usedBy > 0) {
-    if (!confirm(`Bu kartla yapılmış ${usedBy} harcama var. Silersen bu harcamalar da silinecek. Devam edilsin mi?`)) return;
+    if (!confirm(`Bu kartla ${usedBy} harcama var. Silersen onlar da silinecek. Devam?`)) return;
     state.expenses = state.expenses.filter(e => e.cardId !== editingCard.id);
-  } else {
-    if (!confirm('Bu kartı silmek istiyor musun?')) return;
-  }
+  } else { if (!confirm('Bu kartı silmek istiyor musun?')) return; }
+  state.payments = state.payments.filter(p => p.cardId !== editingCard.id);
   state.cards = state.cards.filter(c => c.id !== editingCard.id);
   await saveState();
   closeModal('cardModal');
@@ -2079,6 +1862,7 @@ async function deleteCard() {
 }
 window.deleteCard = deleteCard;
 
+// CATEGORY
 function openCategoryModal() {
   editingCategory = null;
   document.getElementById('catModalTitle').textContent = 'Yeni Kategori';
@@ -2104,7 +1888,7 @@ window.editCategory = editCategory;
 async function saveCategory() {
   const name = document.getElementById('cat-name').value.trim();
   const icon = document.getElementById('cat-icon').value.trim() || '🏷️';
-  if (!name) { showToast('Kategori adı girin', 'error'); return; }
+  if (!name) { showToast('Ad girin', 'error'); return; }
   if (editingCategory) Object.assign(editingCategory, { name, icon });
   else state.categories.push({ id: 'k' + Date.now(), name, icon });
   await saveState();
@@ -2117,8 +1901,8 @@ window.saveCategory = saveCategory;
 async function deleteCategory() {
   if (!editingCategory) return;
   const usedBy = state.expenses.filter(e => e.categoryId === editingCategory.id).length;
-  if (usedBy > 0) { showToast(`Bu kategoride ${usedBy} harcama var.`, 'error'); return; }
-  if (!confirm('Bu kategoriyi silmek istiyor musun?')) return;
+  if (usedBy > 0) { showToast(`Bu kategoride ${usedBy} harcama var`, 'error'); return; }
+  if (!confirm('Sil?')) return;
   state.categories = state.categories.filter(c => c.id !== editingCategory.id);
   await saveState();
   closeModal('categoryModal');
@@ -2127,13 +1911,264 @@ async function deleteCategory() {
 }
 window.deleteCategory = deleteCategory;
 
-// ============================================================================
-// HEADER ACTIONS
-// ============================================================================
+// ACCOUNT
+function openAccountModal() {
+  editingAccount = null;
+  document.getElementById('accountModalTitle').textContent = 'Yeni Hesap';
+  document.getElementById('account-delete-btn').style.display = 'none';
+  document.getElementById('account-name').value = '';
+  document.getElementById('account-type').value = 'bank';
+  document.getElementById('account-balance').value = '';
+  openModal('accountModal');
+}
+window.openAccountModal = openAccountModal;
 
-document.getElementById('lockBtn').addEventListener('click', () => {
-  if (confirm('Uygulamayı kilitlemek istiyor musun?')) location.reload();
-});
+function editAccount(id) {
+  const acc = state.accounts.find(a => a.id === id);
+  if (!acc) return;
+  editingAccount = acc;
+  document.getElementById('accountModalTitle').textContent = 'Hesabı Düzenle';
+  document.getElementById('account-delete-btn').style.display = 'inline-flex';
+  document.getElementById('account-name').value = acc.name;
+  document.getElementById('account-type').value = acc.type;
+  document.getElementById('account-balance').value = acc.balance;
+  openModal('accountModal');
+}
+window.editAccount = editAccount;
+
+async function saveAccount() {
+  const name = document.getElementById('account-name').value.trim();
+  const type = document.getElementById('account-type').value;
+  const balance = parseFloat(document.getElementById('account-balance').value) || 0;
+  if (!name) { showToast('Hesap adı girin', 'error'); return; }
+  if (editingAccount) Object.assign(editingAccount, { name, type, balance });
+  else state.accounts.push({ id: 'a' + Date.now(), name, type, balance });
+  await saveState();
+  closeModal('accountModal');
+  renderAll();
+  showToast(editingAccount ? '✏️ Güncellendi' : '✅ Eklendi', 'success');
+}
+window.saveAccount = saveAccount;
+
+async function deleteAccount() {
+  if (!editingAccount) return;
+  const usedByIncome = state.incomes.filter(i => i.accountId === editingAccount.id).length;
+  const usedByPayment = state.payments.filter(p => p.accountId === editingAccount.id).length;
+  if (usedByIncome > 0 || usedByPayment > 0) {
+    if (!confirm(`Bu hesaba bağlı ${usedByIncome} gelir ve ${usedByPayment} ödeme var. Yine de sil?`)) return;
+  } else { if (!confirm('Sil?')) return; }
+  state.accounts = state.accounts.filter(a => a.id !== editingAccount.id);
+  await saveState();
+  closeModal('accountModal');
+  renderAll();
+  showToast('🗑️ Silindi', 'success');
+}
+window.deleteAccount = deleteAccount;
+
+// INCOME
+function openIncomeModal() {
+  if (fabOpen) toggleFab();
+  if (state.accounts.length === 0) { showToast('Önce bir hesap ekle (Hesaplarım sayfasından)', 'error'); goToPage('accounts'); return; }
+  if (state.incomeSources.length === 0) { showToast('Önce gelir kaynağı ekle (Ayarlardan)', 'error'); return; }
+  editingIncome = null;
+  document.getElementById('incomeModalTitle').textContent = 'Gelir Ekle';
+  document.getElementById('inc-delete-btn').style.display = 'none';
+  document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('inc-amount').value = '';
+  document.getElementById('inc-note').value = '';
+  populateIncomeFormDropdowns();
+  openModal('incomeModal');
+}
+window.openIncomeModal = openIncomeModal;
+
+function editIncome(id) {
+  const inc = state.incomes.find(i => i.id === id);
+  if (!inc) return;
+  editingIncome = inc;
+  document.getElementById('incomeModalTitle').textContent = 'Geliri Düzenle';
+  document.getElementById('inc-delete-btn').style.display = 'inline-flex';
+  populateIncomeFormDropdowns();
+  document.getElementById('inc-date').value = inc.date;
+  document.getElementById('inc-amount').value = inc.amount;
+  document.getElementById('inc-source').value = inc.sourceId;
+  document.getElementById('inc-account').value = inc.accountId;
+  document.getElementById('inc-note').value = inc.note || '';
+  openModal('incomeModal');
+}
+window.editIncome = editIncome;
+
+async function saveIncome() {
+  const date = document.getElementById('inc-date').value;
+  const amount = parseFloat(document.getElementById('inc-amount').value);
+  const sourceId = document.getElementById('inc-source').value;
+  const accountId = document.getElementById('inc-account').value;
+  const note = document.getElementById('inc-note').value.trim();
+  if (!date || !amount || amount <= 0) { showToast('Tarih ve tutar girin', 'error'); return; }
+  
+  const account = state.accounts.find(a => a.id === accountId);
+  if (!account) { showToast('Hesap seçin', 'error'); return; }
+  
+  if (editingIncome) {
+    // Eski tutarı geri al, yeni tutarı ekle
+    const oldAccount = state.accounts.find(a => a.id === editingIncome.accountId);
+    if (oldAccount) oldAccount.balance -= editingIncome.amount;
+    account.balance += amount;
+    Object.assign(editingIncome, { date, amount, sourceId, accountId, note });
+  } else {
+    account.balance += amount;
+    state.incomes.push({ id: 'i' + Date.now(), date, amount, sourceId, accountId, note });
+  }
+  
+  await saveState();
+  closeModal('incomeModal');
+  renderAll();
+  showToast(editingIncome ? '✏️ Güncellendi' : '✅ Gelir eklendi, bakiye güncellendi', 'success');
+}
+window.saveIncome = saveIncome;
+
+async function deleteIncome() {
+  if (!editingIncome) return;
+  if (!confirm('Bu geliri silmek istiyor musun? Hesap bakiyesinden düşülecek.')) return;
+  const account = state.accounts.find(a => a.id === editingIncome.accountId);
+  if (account) account.balance -= editingIncome.amount;
+  state.incomes = state.incomes.filter(i => i.id !== editingIncome.id);
+  await saveState();
+  closeModal('incomeModal');
+  renderAll();
+  showToast('🗑️ Silindi, bakiye güncellendi', 'success');
+}
+window.deleteIncome = deleteIncome;
+
+// INCOME SOURCE
+function openIncomeSourceModal() {
+  editingIncomeSource = null;
+  document.getElementById('incSrcModalTitle').textContent = 'Yeni Gelir Kaynağı';
+  document.getElementById('incsrc-delete-btn').style.display = 'none';
+  document.getElementById('incsrc-name').value = '';
+  document.getElementById('incsrc-icon').value = '';
+  openModal('incomeSourceModal');
+}
+window.openIncomeSourceModal = openIncomeSourceModal;
+
+function editIncomeSource(id) {
+  const src = state.incomeSources.find(s => s.id === id);
+  if (!src) return;
+  editingIncomeSource = src;
+  document.getElementById('incSrcModalTitle').textContent = 'Düzenle';
+  document.getElementById('incsrc-delete-btn').style.display = 'inline-flex';
+  document.getElementById('incsrc-name').value = src.name;
+  document.getElementById('incsrc-icon').value = src.icon;
+  openModal('incomeSourceModal');
+}
+window.editIncomeSource = editIncomeSource;
+
+async function saveIncomeSource() {
+  const name = document.getElementById('incsrc-name').value.trim();
+  const icon = document.getElementById('incsrc-icon').value.trim() || '💰';
+  if (!name) { showToast('Ad girin', 'error'); return; }
+  if (editingIncomeSource) Object.assign(editingIncomeSource, { name, icon });
+  else state.incomeSources.push({ id: 'is' + Date.now(), name, icon });
+  await saveState();
+  closeModal('incomeSourceModal');
+  renderAll();
+  showToast('✅ Kaydedildi', 'success');
+}
+window.saveIncomeSource = saveIncomeSource;
+
+async function deleteIncomeSource() {
+  if (!editingIncomeSource) return;
+  const used = state.incomes.filter(i => i.sourceId === editingIncomeSource.id).length;
+  if (used > 0) { showToast(`Bu kaynaktan ${used} gelir var`, 'error'); return; }
+  if (!confirm('Sil?')) return;
+  state.incomeSources = state.incomeSources.filter(s => s.id !== editingIncomeSource.id);
+  await saveState();
+  closeModal('incomeSourceModal');
+  renderAll();
+  showToast('🗑️ Silindi', 'success');
+}
+window.deleteIncomeSource = deleteIncomeSource;
+
+// PAYMENT
+function askPayment(cardId, paymentMonth, amount) {
+  if (state.accounts.length === 0) {
+    showToast('Önce hesap eklemen gerekiyor (Hesaplarım sayfası)', 'error');
+    setTimeout(() => goToPage('accounts'), 1500);
+    return;
+  }
+  pendingPayment = { cardId, paymentMonth, amount };
+  const card = state.cards.find(c => c.id === cardId);
+  document.getElementById('paymentModalSubtitle').textContent = `${card.name} - ${new Date(paymentMonth + '-01').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })}`;
+  document.getElementById('paymentAmount').textContent = formatCurrency(amount);
+  document.getElementById('pay-account').innerHTML = state.accounts.map(a => `<option value="${a.id}">${ACCOUNT_TYPE_ICONS[a.type] || '💼'} ${a.name} (${formatCurrency(a.balance)})</option>`).join('');
+  document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+  openModal('paymentModal');
+}
+window.askPayment = askPayment;
+
+async function confirmPayment() {
+  if (!pendingPayment) return;
+  const accountId = document.getElementById('pay-account').value;
+  const date = document.getElementById('pay-date').value;
+  const account = state.accounts.find(a => a.id === accountId);
+  if (!account) { showToast('Hesap seçin', 'error'); return; }
+  
+  // Bakiye kontrolü
+  const newBalance = account.balance - pendingPayment.amount;
+  if (newBalance < 0) {
+    if (!confirm(`⚠️ DİKKAT!\n\n${account.name} hesabının bakiyesi negatife düşecek!\n\nMevcut: ${formatCurrency(account.balance)}\nÖdeme: ${formatCurrency(pendingPayment.amount)}\nKalan: ${formatCurrency(newBalance)}\n\nDevam etmek istiyor musun?`)) return;
+  }
+  
+  account.balance = newBalance;
+  state.payments.push({
+    id: 'p' + Date.now(),
+    cardId: pendingPayment.cardId,
+    paymentMonth: pendingPayment.paymentMonth,
+    accountId,
+    amount: pendingPayment.amount,
+    date
+  });
+  
+  await saveState();
+  closeModal('paymentModal');
+  renderAll();
+  
+  if (newBalance < 0) {
+    showToast(`⚠️ Ödeme yapıldı ama ${account.name} hesabı eksiye düştü`, 'warning');
+  } else {
+    showToast('✅ Ödeme kaydedildi, bakiye güncellendi', 'success');
+  }
+  pendingPayment = null;
+}
+window.confirmPayment = confirmPayment;
+
+function askUndoPayment(paymentId) {
+  pendingUndoPayment = paymentId;
+  const payment = state.payments.find(p => p.id === paymentId);
+  if (!payment) return;
+  const card = state.cards.find(c => c.id === payment.cardId);
+  const account = state.accounts.find(a => a.id === payment.accountId);
+  document.getElementById('undoPaymentSubtitle').textContent = `${card ? card.name : '?'} ödemesi (${formatCurrency(payment.amount)}) iptal edilecek ve ${account ? account.name : '?'} hesabına geri eklenecek.`;
+  openModal('undoPaymentModal');
+}
+window.askUndoPayment = askUndoPayment;
+
+async function confirmUndoPayment() {
+  if (!pendingUndoPayment) return;
+  const payment = state.payments.find(p => p.id === pendingUndoPayment);
+  if (!payment) return;
+  const account = state.accounts.find(a => a.id === payment.accountId);
+  if (account) account.balance += payment.amount;
+  state.payments = state.payments.filter(p => p.id !== pendingUndoPayment);
+  await saveState();
+  closeModal('undoPaymentModal');
+  renderAll();
+  showToast('↩ Ödeme geri alındı', 'success');
+  pendingUndoPayment = null;
+}
+window.confirmUndoPayment = confirmUndoPayment;
+
+// === HEADER ACTIONS ===
+document.getElementById('lockBtn').addEventListener('click', () => { if (confirm('Kilitle?')) location.reload(); });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -2143,7 +2178,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   a.download = 'kart-takip-yedek-' + new Date().toISOString().split('T')[0] + '.json';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('💾 Yedek indirildi', 'success');
+  showToast('💾 İndirildi', 'success');
 });
 
 document.getElementById('importBtn').addEventListener('click', () => {
@@ -2153,17 +2188,17 @@ document.getElementById('importBtn').addEventListener('click', () => {
   input.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!confirm('Mevcut verilerinin üzerine yazılacak ve buluta gönderilecek. Devam edilsin mi?')) return;
+    if (!confirm('Mevcut verilerin üzerine yazılacak. Devam?')) return;
     try {
       const text = await file.text();
       const data = JSON.parse(text);
       if (data.cards && data.categories && data.expenses) {
-        state = data;
+        state = migrateState(data);
         await saveState();
         renderAll();
         showToast('✅ Geri yüklendi', 'success');
-      } else { showToast('Geçersiz yedek', 'error'); }
-    } catch (err) { showToast('Dosya okunamadı', 'error'); }
+      } else { showToast('Geçersiz', 'error'); }
+    } catch { showToast('Okunamadı', 'error'); }
   };
   input.click();
 });
@@ -2173,32 +2208,28 @@ async function changePassword() {
   const newP = document.getElementById('newPass').value;
   const conf = document.getElementById('newPassConfirm').value;
   if (!old || !newP) { showToast('Tüm alanları doldurun', 'error'); return; }
-  if (newP.length < 4) { showToast('Yeni şifre en az 4 karakter olmalı', 'error'); return; }
-  if (newP !== conf) { showToast('Yeni şifreler eşleşmiyor', 'error'); return; }
+  if (newP.length < 4) { showToast('En az 4 karakter', 'error'); return; }
+  if (newP !== conf) { showToast('Eşleşmiyor', 'error'); return; }
   const oldHash = await hash(old);
-  if (oldHash !== localStorage.getItem(HASH_KEY)) { showToast('Mevcut şifre yanlış', 'error'); return; }
-  
+  if (oldHash !== localStorage.getItem(HASH_KEY)) { showToast('Eski şifre yanlış', 'error'); return; }
   const newHash = await hash(newP);
   localStorage.setItem(HASH_KEY, newHash);
   currentPassword = newP;
-  await uploadToFirebase(); // Yeni şifreyle tekrar şifrele ve yükle
-  
+  await uploadToFirebase();
   document.getElementById('oldPass').value = '';
   document.getElementById('newPass').value = '';
   document.getElementById('newPassConfirm').value = '';
-  showToast('🔐 Şifre değiştirildi (tüm cihazlarda yeni şifre kullan)', 'success');
+  showToast('🔐 Değiştirildi', 'success');
 }
 window.changePassword = changePassword;
 
 function copyCloudId() {
-  navigator.clipboard.writeText(currentCloudId).then(() => {
-    showToast('📋 Bulut ID kopyalandı', 'success');
-  });
+  navigator.clipboard.writeText(currentCloudId).then(() => showToast('📋 Kopyalandı', 'success'));
 }
 window.copyCloudId = copyCloudId;
 
 function logoutDevice() {
-  if (!confirm('Bu cihazdan çıkış yapmak istiyor musun? Verilerin bulutta kalacak, tekrar bağlanabilirsin.')) return;
+  if (!confirm('Çıkış yap? Verilerin bulutta kalır.')) return;
   if (firebaseListener) firebaseListener();
   localStorage.removeItem(LOCAL_DATA_KEY);
   localStorage.removeItem(HASH_KEY);
@@ -2215,10 +2246,6 @@ function showToast(msg, type = '') {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.className = 'toast ' + type, 2500);
 }
-
-// ============================================================================
-// START
-// ============================================================================
 
 init();
 </script>
