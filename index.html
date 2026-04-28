@@ -405,6 +405,98 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .history-info .title { font-weight: 500; font-size: 14px; }
 .history-info .meta { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 .history-amount { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px; text-align: right; color: var(--success); }
+
+/* === FORECAST / HEALTH === */
+.health-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  margin-bottom: 16px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+.health-card.good { border-color: var(--success); background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(45,212,191,0.05)); }
+.health-card.warning { border-color: var(--warning); background: linear-gradient(135deg, rgba(251,146,60,0.15), rgba(251,146,60,0.05)); }
+.health-card.danger { border-color: var(--danger); background: linear-gradient(135deg, rgba(248,113,113,0.2), rgba(248,113,113,0.05)); animation: dangerPulse 2s infinite; }
+.health-card.critical { border-color: var(--danger); background: linear-gradient(135deg, var(--danger), #c53030); animation: dangerPulse 1s infinite; }
+@keyframes dangerPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); } 50% { box-shadow: 0 0 0 6px rgba(248,113,113,0.15); } }
+
+.health-icon { font-size: 48px; flex-shrink: 0; }
+.health-info { flex: 1; }
+.health-status { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.health-detail { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.health-card.critical .health-detail { color: rgba(255,255,255,0.9); }
+.health-card.critical .health-status { color: white; }
+
+.warning-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+.warning-card.info { background: rgba(96,165,250,0.1); border-color: rgba(96,165,250,0.3); }
+.warning-card.success { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); }
+.warning-icon { font-size: 22px; flex-shrink: 0; }
+.warning-content .warning-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.warning-content .warning-text { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+.forecast-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.forecast-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-2);
+  border-radius: 10px;
+  border-left: 3px solid var(--border);
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.forecast-row:hover { background: var(--surface-2); }
+.forecast-row.negative { border-left-color: var(--danger); background: rgba(248,113,113,0.06); }
+.forecast-row.warning { border-left-color: var(--warning); }
+.forecast-row.good { border-left-color: var(--success); }
+.forecast-row.current { border-left-color: var(--accent); background: rgba(245,158,11,0.08); }
+
+.forecast-month { font-weight: 700; font-size: 13px; }
+.forecast-month .yr { display: block; font-size: 10px; color: var(--text-dim); font-weight: 500; }
+.forecast-flow { font-size: 11px; color: var(--text-dim); display: flex; gap: 8px; flex-wrap: wrap; }
+.forecast-flow span { white-space: nowrap; }
+.forecast-flow .income { color: var(--success); }
+.forecast-flow .out { color: var(--warning); }
+
+.forecast-balance { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; text-align: right; }
+.forecast-balance.neg { color: var(--danger); }
+.forecast-balance.pos { color: var(--success); }
+
+.forecast-detail-modal {
+  background: var(--bg);
+  padding: 14px;
+  border-radius: 10px;
+  margin-top: 8px;
+  display: none;
+}
+.forecast-detail-modal.show { display: block; }
+.detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.detail-row:last-child { border-bottom: none; font-weight: 700; padding-top: 10px; }
+.detail-row .lbl { color: var(--text-dim); }
+.detail-row .val { font-family: 'JetBrains Mono', monospace; }
+.detail-row .val.green { color: var(--success); }
+.detail-row .val.orange { color: var(--warning); }
+.detail-row .val.red { color: var(--danger); }
 </style>
 </head>
 <body>
@@ -576,7 +668,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
     <!-- CALENDAR -->
     <div class="page" id="page-calendar">
       <h1 class="page-title">Aylık Plan</h1>
-      <p class="page-subtitle">Gelecek 12 ayın ödeme takvimi</p>
+      <p class="page-subtitle">Gelecek 18 ayın ödeme takvimi</p>
 
       <div class="month-selector" id="monthSelector"></div>
       
@@ -586,8 +678,65 @@ input:focus, select:focus, textarea:focus { outline: none; }
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title">📈 12 Aylık Tahmin</div></div>
+        <div class="section-header"><div class="section-title">📈 18 Aylık Tahmin</div></div>
         <div class="section-body"><div class="chart-wrap"><canvas id="forecastChart"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- FORECAST -->
+    <div class="page" id="page-forecast">
+      <h1 class="page-title">Tahmin</h1>
+      <p class="page-subtitle">Geleceğe yönelik finansal projeksiyon</p>
+
+      <!-- Sağlık Skoru -->
+      <div class="health-card" id="healthCard">
+        <div class="health-icon" id="healthIcon">❓</div>
+        <div class="health-info">
+          <div class="health-status" id="healthStatus">Hesaplanıyor...</div>
+          <div class="health-detail" id="healthDetail">-</div>
+        </div>
+      </div>
+
+      <!-- Dayanma Süresi -->
+      <div class="stat-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--primary), var(--teal));">
+          <div class="stat-label">Dayanma Süresi</div>
+          <div class="stat-value" id="surviveMonths">- ay</div>
+          <div class="stat-meta" id="surviveDetail">Gelir olmasa bile</div>
+        </div>
+        <div class="stat-card" style="--gradient: linear-gradient(90deg, var(--purple), var(--pink));">
+          <div class="stat-label">Aylık Ortalama</div>
+          <div class="stat-value" id="avgSpending">₺0</div>
+          <div class="stat-meta">Son 6 ay harcama</div>
+        </div>
+      </div>
+
+      <!-- Uyarılar -->
+      <div id="warningsContainer"></div>
+
+      <!-- Aylık Projeksiyon -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">📊 12 Aylık Detaylı Tahmin</div>
+        </div>
+        <div class="section-body">
+          <p style="font-size:12px; color:var(--text-dim); margin-bottom:16px;">Geçmiş gelir ve harcamalarına göre hesaplandı. Tutarlar tahminidir.</p>
+          <div class="forecast-table" id="forecastTable"></div>
+        </div>
+      </div>
+
+      <!-- Bakiye Trend Grafiği -->
+      <div class="section">
+        <div class="section-header"><div class="section-title">📈 Bakiye Tahmini</div></div>
+        <div class="section-body"><div class="chart-wrap" style="height: 280px;"><canvas id="balanceForecastChart"></canvas></div></div>
+      </div>
+
+      <!-- Aylık Plan'a kısayol -->
+      <div class="section">
+        <div class="section-header"><div class="section-title">📅 Diğer Görünümler</div></div>
+        <div class="section-body">
+          <button class="btn btn-secondary btn-block" onclick="goToPage('calendar')" style="margin-bottom:8px;">📅 Aylık Ödeme Planı</button>
+        </div>
       </div>
     </div>
 
@@ -685,7 +834,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <button class="nav-btn active" data-page="home"><span class="icon">⌂</span><span>Panel</span></button>
       <button class="nav-btn" data-page="accounts"><span class="icon">💰</span><span>Hesap</span></button>
       <button class="nav-btn" data-page="expenses"><span class="icon">📋</span><span>Harcama</span></button>
-      <button class="nav-btn" data-page="calendar"><span class="icon">📅</span><span>Takvim</span></button>
+      <button class="nav-btn" data-page="forecast"><span class="icon">🔮</span><span>Tahmin</span></button>
       <button class="nav-btn" data-page="settings"><span class="icon">⚙</span><span>Ayar</span></button>
     </div>
   </nav>
@@ -1290,6 +1439,7 @@ function renderAll() {
   renderAccounts();
   renderExpenses();
   renderCalendar();
+  renderForecast();
   renderCardsList();
   renderCategoriesList();
   renderIncomeSourcesList();
@@ -1740,6 +1890,353 @@ function renderForecastChart() {
     type: 'bar',
     data: { labels, datasets: [{ data, backgroundColor: data.map((_, i) => i === 0 ? '#f59e0b' : 'rgba(96,165,250,0.6)'), borderRadius: 8 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(148,163,184,0.1)' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } } }
+  });
+}
+
+// === TAHMİN / FORECAST PAGE ===
+let balanceForecastChart = null;
+
+function renderForecast() {
+  const today = new Date();
+  const totalBalance = getTotalBalance();
+  
+  // Son 6 ay ortalama harcama (kart harcaması)
+  let totalSpending6Month = 0;
+  let monthsWithData = 0;
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const key = getMonthKey(d);
+    let monthTotal = 0;
+    state.expenses.forEach(e => { if (getExpenseMonth(e) === key) monthTotal += e.amount; });
+    if (monthTotal > 0) {
+      totalSpending6Month += monthTotal;
+      monthsWithData++;
+    }
+  }
+  const avgMonthlySpending = monthsWithData > 0 ? totalSpending6Month / monthsWithData : 0;
+  
+  // Son 6 ay ortalama gelir
+  let totalIncome6Month = 0;
+  let incomeMonths = 0;
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const key = getMonthKey(d);
+    let monthTotal = 0;
+    state.incomes.forEach(inc => { if (getMonthKey(new Date(inc.date)) === key) monthTotal += inc.amount; });
+    if (monthTotal > 0) { totalIncome6Month += monthTotal; incomeMonths++; }
+  }
+  const avgMonthlyIncome = incomeMonths > 0 ? totalIncome6Month / incomeMonths : 0;
+  
+  document.getElementById('avgSpending').textContent = formatCurrency(avgMonthlySpending);
+  
+  // Toplam ödenmemiş kart borçları (gelecek 12 ay)
+  let totalUpcomingDebt = 0;
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const key = getMonthKey(d);
+    state.cards.forEach(card => {
+      const amount = calculateCardPayment(card.id, key);
+      const paid = isPaymentMade(card.id, key);
+      if (!paid && amount > 0) totalUpcomingDebt += amount;
+    });
+  }
+  
+  // Bu ay ödenmesi gereken (ana panelde de var)
+  let thisMonthDebt = 0;
+  for (let offset = -6; offset <= 0; offset++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+    const key = getMonthKey(d);
+    state.cards.forEach(card => {
+      const amount = calculateCardPayment(card.id, key);
+      const paid = isPaymentMade(card.id, key);
+      if (!paid && amount > 0) thisMonthDebt += amount;
+    });
+  }
+  
+  // SAĞLIK SKORU
+  renderHealthScore(totalBalance, thisMonthDebt, avgMonthlySpending, totalUpcomingDebt);
+  
+  // DAYANMA SÜRESİ
+  if (avgMonthlySpending > 0) {
+    const surviveMonths = totalBalance / avgMonthlySpending;
+    document.getElementById('surviveMonths').textContent = surviveMonths.toFixed(1) + ' ay';
+    if (surviveMonths >= 6) document.getElementById('surviveDetail').textContent = '👍 Güvenli aralıkta';
+    else if (surviveMonths >= 3) document.getElementById('surviveDetail').textContent = '⚠️ Dikkat et';
+    else document.getElementById('surviveDetail').textContent = '🚨 Riskli';
+  } else {
+    document.getElementById('surviveMonths').textContent = '∞';
+    document.getElementById('surviveDetail').textContent = 'Yetersiz veri';
+  }
+  
+  // 12 AYLIK PROJEKSİYON
+  const projection = calculate12MonthProjection(totalBalance, avgMonthlyIncome, avgMonthlySpending);
+  renderProjectionTable(projection);
+  renderBalanceForecastChart(projection);
+  
+  // UYARILAR
+  renderWarnings(projection, totalBalance, thisMonthDebt, avgMonthlySpending, avgMonthlyIncome);
+}
+
+function renderHealthScore(balance, currentDebt, avgSpending, upcomingDebt) {
+  const card = document.getElementById('healthCard');
+  const icon = document.getElementById('healthIcon');
+  const status = document.getElementById('healthStatus');
+  const detail = document.getElementById('healthDetail');
+  
+  card.className = 'health-card';
+  
+  if (state.accounts.length === 0) {
+    card.classList.add('warning');
+    icon.textContent = '💼';
+    status.textContent = 'Hesap Eklenmemiş';
+    detail.textContent = 'Tahmin yapabilmek için önce hesaplarını ekle (Hesaplarım sayfası).';
+    return;
+  }
+  
+  if (balance >= currentDebt * 3) {
+    card.classList.add('good');
+    icon.textContent = '✨';
+    status.textContent = 'Mükemmel';
+    detail.textContent = `Mevcut paran (${formatCurrency(balance)}), bu ay ödemen gereken borçların 3+ katı. Rahat durumdasın.`;
+  } else if (balance >= currentDebt * 1.5) {
+    card.classList.add('good');
+    icon.textContent = '👍';
+    status.textContent = 'İyi Durumdasın';
+    detail.textContent = `Mevcut paran ${formatCurrency(balance)}, bu ay ödenecek ${formatCurrency(currentDebt)} borç var. Ödedikten sonra ${formatCurrency(balance - currentDebt)} kalacak.`;
+  } else if (balance >= currentDebt) {
+    card.classList.add('warning');
+    icon.textContent = '⚠️';
+    status.textContent = 'Dikkat Et';
+    detail.textContent = `Borçlarını ödemeye paran yetiyor ama sonrasında ${formatCurrency(balance - currentDebt)} kalacak. Sıradaki maaşına kadar dikkatli ol.`;
+  } else if (balance >= currentDebt * 0.5) {
+    card.classList.add('danger');
+    icon.textContent = '🚨';
+    status.textContent = 'Riskli Durum';
+    detail.textContent = `Mevcut paran (${formatCurrency(balance)}), bu ay ödenecek borçları (${formatCurrency(currentDebt)}) karşılayamıyor. ${formatCurrency(currentDebt - balance)} ek gelire ihtiyacın var.`;
+  } else {
+    card.classList.add('critical');
+    icon.textContent = '🆘';
+    status.textContent = 'Acil Durum!';
+    detail.textContent = `Borçlarını ödeyemeyebilirsin. Acil ${formatCurrency(currentDebt - balance)} gelire veya borç yapılandırmasına ihtiyacın olabilir.`;
+  }
+}
+
+function calculate12MonthProjection(startBalance, avgIncome, avgSpending) {
+  const today = new Date();
+  const projection = [];
+  let runningBalance = startBalance;
+  
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const key = getMonthKey(d);
+    
+    // Bu ayın kart borçları (ödenmemiş)
+    let cardDebt = 0;
+    state.cards.forEach(card => {
+      const amount = calculateCardPayment(card.id, key);
+      const paid = isPaymentMade(card.id, key);
+      if (!paid && amount > 0) cardDebt += amount;
+    });
+    
+    // Geçmiş ödenmemiş borçları sadece İLK aya ekle
+    let pastDebt = 0;
+    if (i === 0) {
+      for (let j = 1; j <= 6; j++) {
+        const pd = new Date(today.getFullYear(), today.getMonth() - j, 1);
+        const pk = getMonthKey(pd);
+        state.cards.forEach(card => {
+          const amount = calculateCardPayment(card.id, pk);
+          const paid = isPaymentMade(card.id, pk);
+          if (!paid && amount > 0) pastDebt += amount;
+        });
+      }
+    }
+    
+    // Tahmini gelir ve ek harcama (kart dışı)
+    const expectedIncome = i === 0 ? 0 : avgIncome;  // Bu ayın gelirleri zaten hesaba ekli
+    const otherSpending = i === 0 ? 0 : avgSpending - cardDebt;  // Kart dışı tahmini
+    const cleanOtherSpending = Math.max(0, otherSpending);
+    
+    const monthBalance = runningBalance + expectedIncome - cardDebt - pastDebt - cleanOtherSpending;
+    
+    projection.push({
+      month: d,
+      monthKey: key,
+      startBalance: runningBalance,
+      income: expectedIncome,
+      cardDebt,
+      pastDebt,
+      otherSpending: cleanOtherSpending,
+      endBalance: monthBalance,
+      isCurrent: i === 0
+    });
+    
+    runningBalance = monthBalance;
+  }
+  
+  return projection;
+}
+
+function renderProjectionTable(projection) {
+  const container = document.getElementById('forecastTable');
+  container.innerHTML = '';
+  
+  projection.forEach((p, idx) => {
+    let cssClass = '';
+    if (p.isCurrent) cssClass = 'current';
+    else if (p.endBalance < 0) cssClass = 'negative';
+    else if (p.endBalance < (p.cardDebt || 1000)) cssClass = 'warning';
+    else cssClass = 'good';
+    
+    const monthLabel = p.month.toLocaleDateString('tr-TR', { month: 'short' });
+    const yearLabel = p.month.getFullYear().toString().slice(-2);
+    
+    const flowParts = [];
+    if (p.income > 0) flowParts.push(`<span class="income">+${formatCurrency(p.income).replace('₺','₺')}</span>`);
+    if (p.cardDebt > 0) flowParts.push(`<span class="out">💳-${formatCurrency(p.cardDebt)}</span>`);
+    if (p.pastDebt > 0) flowParts.push(`<span class="out">⚠️-${formatCurrency(p.pastDebt)}</span>`);
+    if (p.otherSpending > 0) flowParts.push(`<span class="out">-${formatCurrency(p.otherSpending)}</span>`);
+    
+    container.innerHTML += `
+      <div class="forecast-row ${cssClass}" onclick="toggleForecastDetail(${idx})">
+        <div class="forecast-month">${monthLabel}<span class="yr">20${yearLabel}</span></div>
+        <div class="forecast-flow">${flowParts.join('') || '<span style="color:var(--text-mute)">Hareket yok</span>'}</div>
+        <div class="forecast-balance ${p.endBalance < 0 ? 'neg' : 'pos'}">${formatCurrency(p.endBalance)}</div>
+      </div>
+      <div class="forecast-detail-modal" id="forecastDetail-${idx}">
+        <div class="detail-row"><span class="lbl">Başlangıç Bakiyesi</span><span class="val">${formatCurrency(p.startBalance)}</span></div>
+        ${p.income > 0 ? `<div class="detail-row"><span class="lbl">Tahmini Gelir</span><span class="val green">+${formatCurrency(p.income)}</span></div>` : ''}
+        ${p.cardDebt > 0 ? `<div class="detail-row"><span class="lbl">Kart Borçları</span><span class="val orange">-${formatCurrency(p.cardDebt)}</span></div>` : ''}
+        ${p.pastDebt > 0 ? `<div class="detail-row"><span class="lbl">Geçmiş Ödenmemiş Borçlar</span><span class="val red">-${formatCurrency(p.pastDebt)}</span></div>` : ''}
+        ${p.otherSpending > 0 ? `<div class="detail-row"><span class="lbl">Diğer Tahmini Harcamalar</span><span class="val orange">-${formatCurrency(p.otherSpending)}</span></div>` : ''}
+        <div class="detail-row"><span class="lbl">Sonuç Bakiye</span><span class="val ${p.endBalance < 0 ? 'red' : 'green'}">${formatCurrency(p.endBalance)}</span></div>
+      </div>`;
+  });
+}
+
+function toggleForecastDetail(idx) {
+  const el = document.getElementById('forecastDetail-' + idx);
+  if (el) el.classList.toggle('show');
+}
+window.toggleForecastDetail = toggleForecastDetail;
+
+function renderBalanceForecastChart(projection) {
+  const labels = projection.map(p => p.month.toLocaleDateString('tr-TR', { month: 'short' }));
+  const data = projection.map(p => p.endBalance);
+  const colors = data.map(v => v < 0 ? '#f87171' : (v < 10000 ? '#fb923c' : '#34d399'));
+  
+  const ctx = document.getElementById('balanceForecastChart').getContext('2d');
+  if (balanceForecastChart) balanceForecastChart.destroy();
+  balanceForecastChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Tahmini Bakiye',
+        data,
+        borderColor: '#60a5fa',
+        backgroundColor: 'rgba(96,165,250,0.1)',
+        tension: 0.3,
+        fill: true,
+        pointBackgroundColor: colors,
+        pointBorderColor: '#0a0e1a',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        segment: {
+          borderColor: ctx => ctx.p1.parsed.y < 0 ? '#f87171' : '#60a5fa'
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { 
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => formatCurrency(ctx.parsed.y) }
+        }
+      },
+      scales: {
+        y: {
+          ticks: { color: '#94a3b8', callback: v => '₺' + (v/1000).toFixed(0) + 'k' },
+          grid: { color: 'rgba(148,163,184,0.1)' }
+        },
+        x: {
+          ticks: { color: '#94a3b8' },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function renderWarnings(projection, balance, thisDebt, avgSpending, avgIncome) {
+  const container = document.getElementById('warningsContainer');
+  container.innerHTML = '';
+  const warnings = [];
+  
+  // Negatife düşen aylar
+  const negativeMonths = projection.filter(p => p.endBalance < 0 && !p.isCurrent);
+  if (negativeMonths.length > 0) {
+    const firstNeg = negativeMonths[0];
+    warnings.push({
+      type: 'danger',
+      icon: '🚨',
+      title: 'Bakiyen Negatife Düşecek!',
+      text: `${firstNeg.month.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })} ayında bakiyen ${formatCurrency(firstNeg.endBalance)} olacak. Şimdiden tedbir al!`
+    });
+  }
+  
+  // Bu ay borç fazla
+  if (balance < thisDebt && thisDebt > 0) {
+    warnings.push({
+      type: 'danger',
+      icon: '⚠️',
+      title: 'Bu Ay Borç Fazla',
+      text: `Mevcut paran ${formatCurrency(balance)}, ödenecek borç ${formatCurrency(thisDebt)}. ${formatCurrency(thisDebt - balance)} ek gelir gerekli.`
+    });
+  }
+  
+  // Az hesap
+  if (state.accounts.length < 2 && state.accounts.length > 0) {
+    warnings.push({
+      type: 'info',
+      icon: '💡',
+      title: 'Daha Detaylı Takip İçin',
+      text: 'Birden fazla hesap (Nakit, Banka, Altın vb.) eklersen finansal varlık dağılımını daha iyi görebilirsin.'
+    });
+  }
+  
+  // Veri yetersiz
+  if (state.incomes.length === 0) {
+    warnings.push({
+      type: 'info',
+      icon: '📥',
+      title: 'Henüz Gelir Kaydın Yok',
+      text: 'Maaş ve diğer gelirlerini eklersen tahminler daha doğru olur. Sağ alttaki + butonundan "Gelir Ekle" yapabilirsin.'
+    });
+  }
+  
+  // İyi durumdasın bilgisi
+  if (warnings.length === 0 && balance > 0) {
+    warnings.push({
+      type: 'success',
+      icon: '🎉',
+      title: 'İyi Gidiyorsun!',
+      text: 'Önümüzdeki 12 ay boyunca bakiyen pozitif kalacak gibi görünüyor. Mevcut tasarruf alışkanlığını sürdür.'
+    });
+  }
+  
+  warnings.forEach(w => {
+    container.innerHTML += `
+      <div class="warning-card ${w.type}">
+        <div class="warning-icon">${w.icon}</div>
+        <div class="warning-content">
+          <div class="warning-title">${w.title}</div>
+          <div class="warning-text">${w.text}</div>
+        </div>
+      </div>`;
   });
 }
 
