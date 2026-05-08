@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Kart Takip - Kişisel Finans</title>
-<link rel="icon" href="icon-192.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon-192.svg">
-<link rel="manifest" href="manifest.json">  
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Fraunces:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -948,7 +945,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <p class="page-subtitle">Kart, kategori ve veri yönetimi</p>
 
       <div class="mgmt-tabs">
-        <div class="mgmt-tab active" data-mgmt="cards">💳 Kartlar</div>
+        <div class="mgmt-tab active" data-mgmt="cards">💳 Ödeme Yöntemleri</div>
         <div class="mgmt-tab" data-mgmt="categories">🏷️ Kategoriler</div>
         <div class="mgmt-tab" data-mgmt="incomesources">📥 Gelir Kaynakları</div>
         <div class="mgmt-tab" data-mgmt="security">🔐 Hesap</div>
@@ -1069,13 +1066,47 @@ input:focus, select:focus, textarea:focus { outline: none; }
 <div class="modal-overlay" id="cardModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <h2 class="modal-title" id="cardModalTitle">Yeni Kart</h2>
-    <div class="form-group"><label class="form-label">Kart Adı</label><input type="text" class="form-input" id="card-name" placeholder="Örn: Yapı Kredi"></div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Hesap Kesim Günü</label><input type="number" min="1" max="31" class="form-input" id="card-cutoff"></div>
-      <div class="form-group"><label class="form-label">Son Ödeme Günü</label><input type="number" min="1" max="31" class="form-input" id="card-due"></div>
+    <h2 class="modal-title" id="cardModalTitle">Yeni Ödeme Yöntemi</h2>
+    <p class="modal-subtitle">Kart, nakit veya banka kartı ekle</p>
+    
+    <div class="form-group">
+      <label class="form-label">Ödeme Yöntemi Tipi</label>
+      <select class="form-select" id="card-type" onchange="updateCardModalUI()">
+        <option value="credit">💳 Kredi Kartı</option>
+        <option value="debit">💰 Banka Kartı (Debit)</option>
+        <option value="cash">💵 Nakit</option>
+      </select>
     </div>
-    <div class="form-group"><label class="form-label">Limit (Opsiyonel)</label><input type="number" min="0" class="form-input" id="card-limit"></div>
+    
+    <div class="form-group"><label class="form-label">Adı</label><input type="text" class="form-input" id="card-name" placeholder="Örn: Yapı Kredi / Nakit Cüzdan"></div>
+    
+    <!-- Kredi Kartı için özel alanlar -->
+    <div id="cardCreditFields">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Hesap Kesim Günü</label><input type="number" min="1" max="31" class="form-input" id="card-cutoff"></div>
+        <div class="form-group"><label class="form-label">Son Ödeme Günü</label><input type="number" min="1" max="31" class="form-input" id="card-due"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Limit (Opsiyonel)</label><input type="number" min="0" class="form-input" id="card-limit"></div>
+    </div>
+    
+    <!-- Debit Kartı için: hesap bağlantısı -->
+    <div id="cardDebitFields" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Bağlı Hesap</label>
+        <select class="form-select" id="card-linked-account"></select>
+        <p style="font-size:11px; color:var(--text-dim); margin-top:6px;">💡 Bu kartla yapılan harcamalar seçili hesaptan anında düşer.</p>
+      </div>
+    </div>
+    
+    <!-- Nakit için: hesap bağlantısı -->
+    <div id="cardCashFields" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Bağlı Hesap (Nakit Cüzdanı)</label>
+        <select class="form-select" id="card-cash-account"></select>
+        <p style="font-size:11px; color:var(--text-dim); margin-top:6px;">💡 Nakit harcamalar seçili "Nakit" tipindeki hesaptan düşer. Yoksa önce bir Nakit hesabı ekle.</p>
+      </div>
+    </div>
+    
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('cardModal')">İptal</button>
       <button class="btn btn-danger" id="card-delete-btn" style="display:none;" onclick="deleteCard()">Sil</button>
@@ -1279,10 +1310,10 @@ let isApplyingRemoteUpdate = false;
 let pendingSaveTimeout = null;
 
 const DEFAULT_CARDS = [
-  { id: 'c1', name: 'Yapı Kredi', cutoff: 12, due: 21, limit: 0 },
-  { id: 'c2', name: 'İş Bankası', cutoff: 6, due: 15, limit: 0 },
-  { id: 'c3', name: 'Denizbank', cutoff: 28, due: 6, limit: 0 },
-  { id: 'c4', name: 'Finansbank', cutoff: 8, due: 18, limit: 0 }
+  { id: 'c1', name: 'Yapı Kredi', type: 'credit', cutoff: 12, due: 21, limit: 0 },
+  { id: 'c2', name: 'İş Bankası', type: 'credit', cutoff: 6, due: 15, limit: 0 },
+  { id: 'c3', name: 'Denizbank', type: 'credit', cutoff: 28, due: 6, limit: 0 },
+  { id: 'c4', name: 'Finansbank', type: 'credit', cutoff: 8, due: 18, limit: 0 }
 ];
 
 const DEFAULT_CATEGORIES = [
@@ -1485,6 +1516,12 @@ function migrateState(data) {
   if (!data.budgetMode) data.budgetMode = 'auto';
   if (data.manualBudget === undefined) data.manualBudget = 0;
   if (data.manualIncome === undefined) data.manualIncome = 0;
+  
+  // Kartlara type ekle (eski kartlar credit olarak işaretlensin)
+  data.cards.forEach(card => {
+    if (!card.type) card.type = 'credit';
+  });
+  
   return data;
 }
 
@@ -1583,6 +1620,10 @@ function getFirstPaymentMonth(expense) {
 
 // Bir harcamanın TÜM taksit dönemlerini döndürür: [{month: 'YYYY-MM', amount: ...}, ...]
 function getPaymentSchedule(expense) {
+  const card = state.cards.find(c => c.id === expense.cardId);
+  // Debit/Nakit anında düşüyor, takvime dahil değil
+  if (!card || card.type === 'debit' || card.type === 'cash') return [];
+  
   const firstMonth = getFirstPaymentMonth(expense);
   if (!firstMonth) return [];
   const taksit = expense.taksit || 1;
@@ -2422,9 +2463,11 @@ let paymentFilter = { year: null, month: null };
 function renderCardFilters() {
   const container = document.getElementById('cardFilterChips');
   if (state.cards.length === 0) { container.innerHTML = ''; return; }
-  let html = `<div class="chip ${currentCardFilter === 'all' ? 'active' : ''}" data-card="all">💳 Tüm Kartlar</div>`;
+  const TYPE_ICONS = { credit: '💳', debit: '💰', cash: '💵' };
+  let html = `<div class="chip ${currentCardFilter === 'all' ? 'active' : ''}" data-card="all">💳 Tüm Yöntemler</div>`;
   state.cards.forEach(card => {
-    html += `<div class="chip ${currentCardFilter === card.id ? 'active' : ''}" data-card="${card.id}">${card.name}</div>`;
+    const icon = TYPE_ICONS[card.type || 'credit'];
+    html += `<div class="chip ${currentCardFilter === card.id ? 'active' : ''}" data-card="${card.id}">${icon} ${card.name}</div>`;
   });
   container.innerHTML = html;
   
@@ -2631,8 +2674,11 @@ function renderMonthDetail() {
   document.getElementById('selectedMonthLabel').textContent = formatMonthYear(target).toUpperCase();
   const list = document.getElementById('monthDetail');
   list.innerHTML = '';
-  if (state.cards.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart yok</div></div>'; return; }
-  state.cards.forEach(card => {
+  
+  const creditCards = state.cards.filter(c => !c.type || c.type === 'credit');
+  if (creditCards.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kredi kartı yok</div></div>'; return; }
+  
+  creditCards.forEach(card => {
     const total = calculateCardPayment(card.id, key);
     const count = getCardPaymentCount(card.id, key);
     const dueDate = getDueDate(card, key);
@@ -3307,9 +3353,27 @@ function renderWarnings(projection, balance, thisDebt, avgSpending, avgIncome) {
 function renderCardsList() {
   const list = document.getElementById('cardList');
   list.innerHTML = '';
-  if (state.cards.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Kart eklenmemiş</div></div>'; return; }
+  if (state.cards.length === 0) { list.innerHTML = '<div class="empty"><div class="icon">💳</div><div class="text">Ödeme yöntemi eklenmemiş</div></div>'; return; }
+  
+  const TYPE_ICONS = { credit: '💳', debit: '💰', cash: '💵' };
+  const TYPE_NAMES = { credit: 'Kredi Kartı', debit: 'Banka Kartı', cash: 'Nakit' };
+  
   state.cards.forEach(card => {
-    list.innerHTML += `<div class="mgmt-card"><div class="mgmt-row"><div class="mgmt-name">${card.name}</div><div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCard('${card.id}')">✏️</div></div></div><div class="mgmt-detail"><span>📅 Kesim: ${card.cutoff}</span><span>💰 Ödeme: ${card.due}</span>${card.limit > 0 ? '<span>💎 Limit: ' + formatCurrency(card.limit) + '</span>' : ''}</div></div>`;
+    const type = card.type || 'credit';
+    const typeIcon = TYPE_ICONS[type];
+    const typeName = TYPE_NAMES[type];
+    const linkedAccount = card.linkedAccountId ? state.accounts.find(a => a.id === card.linkedAccountId) : null;
+    
+    let detailParts = [`<span>${typeIcon} ${typeName}</span>`];
+    if (type === 'credit') {
+      detailParts.push(`<span>📅 Kesim: ${card.cutoff}</span>`);
+      detailParts.push(`<span>💰 Ödeme: ${card.due}</span>`);
+      if (card.limit > 0) detailParts.push(`<span>💎 Limit: ${formatCurrency(card.limit)}</span>`);
+    } else if (linkedAccount) {
+      detailParts.push(`<span>🔗 ${linkedAccount.name} (${formatCurrency(linkedAccount.balance)})</span>`);
+    }
+    
+    list.innerHTML += `<div class="mgmt-card"><div class="mgmt-row"><div class="mgmt-name">${typeIcon} ${card.name}</div><div class="mgmt-actions"><div class="mgmt-icon-btn" onclick="editCard('${card.id}')">✏️</div></div></div><div class="mgmt-detail">${detailParts.join('')}</div></div>`;
   });
 }
 
@@ -3332,7 +3396,11 @@ function renderIncomeSourcesList() {
 }
 
 function populateExpenseFormDropdowns() {
-  document.getElementById('exp-card').innerHTML = state.cards.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const TYPE_ICONS = { credit: '💳', debit: '💰', cash: '💵' };
+  document.getElementById('exp-card').innerHTML = state.cards.map(c => {
+    const icon = TYPE_ICONS[c.type || 'credit'];
+    return `<option value="${c.id}">${icon} ${c.name}</option>`;
+  }).join('');
   document.getElementById('exp-category').innerHTML = state.categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
 }
 
@@ -3429,19 +3497,84 @@ async function saveExpense() {
   const note = document.getElementById('exp-note').value.trim();
   if (!date) { showToast('Tarih girin', 'error'); return; }
   if (!amount || amount <= 0) { showToast('Geçerli tutar girin', 'error'); return; }
+  
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) { showToast('Ödeme yöntemi seçin', 'error'); return; }
+  
+  // Debit/Nakit ise: anında bağlı hesaptan düş (bakiye kontrolü)
+  const isInstant = card.type === 'debit' || card.type === 'cash';
+  let linkedAccount = null;
+  
+  if (isInstant && card.linkedAccountId) {
+    linkedAccount = state.accounts.find(a => a.id === card.linkedAccountId);
+    if (!linkedAccount) {
+      showToast('Bağlı hesap bulunamadı, ödeme yöntemini düzenle', 'error');
+      return;
+    }
+    
+    // Eğer düzenleme ise, eski tutarı geri al
+    let netChange = amount;
+    if (editingExpense) {
+      const oldCard = state.cards.find(c => c.id === editingExpense.cardId);
+      const wasInstant = oldCard && (oldCard.type === 'debit' || oldCard.type === 'cash');
+      if (wasInstant && oldCard.linkedAccountId) {
+        const oldAccount = state.accounts.find(a => a.id === oldCard.linkedAccountId);
+        if (oldAccount) {
+          oldAccount.balance += editingExpense.amount; // Eski tutarı geri ekle
+        }
+      }
+      netChange = amount; // Yeni tutar düşülecek
+    }
+    
+    // Bakiye kontrolü
+    const newBalance = linkedAccount.balance - amount;
+    if (newBalance < 0) {
+      if (!confirm(`⚠️ DİKKAT!\n\n${linkedAccount.name} hesabının bakiyesi negatife düşecek!\n\nMevcut: ${formatCurrency(linkedAccount.balance)}\nHarcama: ${formatCurrency(amount)}\nKalan: ${formatCurrency(newBalance)}\n\nDevam edilsin mi?`)) {
+        // Kullanıcı vazgeçti, eğer eski geri yüklediysek tekrar düş
+        if (editingExpense) {
+          const oldCard = state.cards.find(c => c.id === editingExpense.cardId);
+          const wasInstant = oldCard && (oldCard.type === 'debit' || oldCard.type === 'cash');
+          if (wasInstant && oldCard.linkedAccountId) {
+            const oldAccount = state.accounts.find(a => a.id === oldCard.linkedAccountId);
+            if (oldAccount) oldAccount.balance -= editingExpense.amount;
+          }
+        }
+        return;
+      }
+    }
+    
+    linkedAccount.balance = newBalance;
+  } else if (editingExpense) {
+    // Sadece düzenleme: eski harcama instant'tı ama yenisi kredi kartına geçti, eski tutarı geri ekle
+    const oldCard = state.cards.find(c => c.id === editingExpense.cardId);
+    const wasInstant = oldCard && (oldCard.type === 'debit' || oldCard.type === 'cash');
+    if (wasInstant && oldCard.linkedAccountId) {
+      const oldAccount = state.accounts.find(a => a.id === oldCard.linkedAccountId);
+      if (oldAccount) oldAccount.balance += editingExpense.amount;
+    }
+  }
+  
   const data = { date, desc, amount, taksit, cardId, categoryId, note };
   if (editingExpense) Object.assign(editingExpense, data);
   else { data.id = 'e' + Date.now() + Math.random().toString(36).slice(2, 5); state.expenses.push(data); }
   await saveState();
   closeModal('expenseModal');
   renderAll();
-  showToast(editingExpense ? '✏️ Güncellendi' : '✅ Eklendi', 'success');
+  showToast(editingExpense ? '✏️ Güncellendi' : (isInstant ? '✅ Eklendi, bakiye düşüldü' : '✅ Eklendi'), 'success');
 }
 window.saveExpense = saveExpense;
 
 async function deleteExpense() {
   if (!editingExpense) return;
   if (!confirm('Bu harcamayı silmek istiyor musun?')) return;
+  
+  // Debit/Nakit ise bakiyeye geri ekle
+  const card = state.cards.find(c => c.id === editingExpense.cardId);
+  if (card && (card.type === 'debit' || card.type === 'cash') && card.linkedAccountId) {
+    const account = state.accounts.find(a => a.id === card.linkedAccountId);
+    if (account) account.balance += editingExpense.amount;
+  }
+  
   state.expenses = state.expenses.filter(e => e.id !== editingExpense.id);
   await saveState();
   closeModal('expenseModal');
@@ -3451,14 +3584,43 @@ async function deleteExpense() {
 window.deleteExpense = deleteExpense;
 
 // CARD
+function updateCardModalUI() {
+  const type = document.getElementById('card-type').value;
+  document.getElementById('cardCreditFields').style.display = type === 'credit' ? 'block' : 'none';
+  document.getElementById('cardDebitFields').style.display = type === 'debit' ? 'block' : 'none';
+  document.getElementById('cardCashFields').style.display = type === 'cash' ? 'block' : 'none';
+  
+  // Hesap dropdownlarını doldur
+  if (type === 'debit') {
+    const sel = document.getElementById('card-linked-account');
+    const bankAccounts = state.accounts.filter(a => a.type === 'bank' || a.type === 'invest');
+    if (bankAccounts.length === 0) {
+      sel.innerHTML = '<option value="">Önce banka hesabı ekle</option>';
+    } else {
+      sel.innerHTML = bankAccounts.map(a => `<option value="${a.id}">${ACCOUNT_TYPE_ICONS[a.type] || '🏦'} ${a.name} (${formatCurrency(a.balance)})</option>`).join('');
+    }
+  } else if (type === 'cash') {
+    const sel = document.getElementById('card-cash-account');
+    const cashAccounts = state.accounts.filter(a => a.type === 'cash');
+    if (cashAccounts.length === 0) {
+      sel.innerHTML = '<option value="">Önce nakit hesabı ekle (Hesaplarım)</option>';
+    } else {
+      sel.innerHTML = cashAccounts.map(a => `<option value="${a.id}">💵 ${a.name} (${formatCurrency(a.balance)})</option>`).join('');
+    }
+  }
+}
+window.updateCardModalUI = updateCardModalUI;
+
 function openCardModal() {
   editingCard = null;
-  document.getElementById('cardModalTitle').textContent = 'Yeni Kart';
+  document.getElementById('cardModalTitle').textContent = 'Yeni Ödeme Yöntemi';
   document.getElementById('card-delete-btn').style.display = 'none';
   document.getElementById('card-name').value = '';
+  document.getElementById('card-type').value = 'credit';
   document.getElementById('card-cutoff').value = '';
   document.getElementById('card-due').value = '';
   document.getElementById('card-limit').value = '';
+  updateCardModalUI();
   openModal('cardModal');
 }
 window.openCardModal = openCardModal;
@@ -3467,26 +3629,54 @@ function editCard(id) {
   const card = state.cards.find(c => c.id === id);
   if (!card) return;
   editingCard = card;
-  document.getElementById('cardModalTitle').textContent = 'Kartı Düzenle';
+  document.getElementById('cardModalTitle').textContent = 'Ödeme Yöntemini Düzenle';
   document.getElementById('card-delete-btn').style.display = 'inline-flex';
   document.getElementById('card-name').value = card.name;
-  document.getElementById('card-cutoff').value = card.cutoff;
-  document.getElementById('card-due').value = card.due;
+  document.getElementById('card-type').value = card.type || 'credit';
+  document.getElementById('card-cutoff').value = card.cutoff || '';
+  document.getElementById('card-due').value = card.due || '';
   document.getElementById('card-limit').value = card.limit || '';
+  updateCardModalUI();
+  // Bağlı hesapları seç
+  if (card.type === 'debit' && card.linkedAccountId) {
+    document.getElementById('card-linked-account').value = card.linkedAccountId;
+  }
+  if (card.type === 'cash' && card.linkedAccountId) {
+    document.getElementById('card-cash-account').value = card.linkedAccountId;
+  }
   openModal('cardModal');
 }
 window.editCard = editCard;
 
 async function saveCard() {
   const name = document.getElementById('card-name').value.trim();
-  const cutoff = parseInt(document.getElementById('card-cutoff').value);
-  const due = parseInt(document.getElementById('card-due').value);
-  const limit = parseFloat(document.getElementById('card-limit').value) || 0;
-  if (!name) { showToast('Kart adı girin', 'error'); return; }
-  if (!cutoff || cutoff < 1 || cutoff > 31) { showToast('Geçerli kesim günü', 'error'); return; }
-  if (!due || due < 1 || due > 31) { showToast('Geçerli ödeme günü', 'error'); return; }
-  if (editingCard) Object.assign(editingCard, { name, cutoff, due, limit });
-  else state.cards.push({ id: 'c' + Date.now(), name, cutoff, due, limit });
+  const type = document.getElementById('card-type').value;
+  if (!name) { showToast('Ad girin', 'error'); return; }
+  
+  const data = { name, type };
+  
+  if (type === 'credit') {
+    const cutoff = parseInt(document.getElementById('card-cutoff').value);
+    const due = parseInt(document.getElementById('card-due').value);
+    const limit = parseFloat(document.getElementById('card-limit').value) || 0;
+    if (!cutoff || cutoff < 1 || cutoff > 31) { showToast('Geçerli kesim günü', 'error'); return; }
+    if (!due || due < 1 || due > 31) { showToast('Geçerli ödeme günü', 'error'); return; }
+    data.cutoff = cutoff;
+    data.due = due;
+    data.limit = limit;
+  } else if (type === 'debit') {
+    const linkedAccountId = document.getElementById('card-linked-account').value;
+    if (!linkedAccountId) { showToast('Önce bir banka hesabı eklemen lazım', 'error'); return; }
+    data.linkedAccountId = linkedAccountId;
+  } else if (type === 'cash') {
+    const linkedAccountId = document.getElementById('card-cash-account').value;
+    if (!linkedAccountId) { showToast('Önce bir Nakit tipinde hesap eklemen lazım', 'error'); return; }
+    data.linkedAccountId = linkedAccountId;
+  }
+  
+  if (editingCard) Object.assign(editingCard, data);
+  else state.cards.push({ id: 'c' + Date.now(), ...data });
+  
   await saveState();
   closeModal('cardModal');
   renderAll();
@@ -3498,9 +3688,9 @@ async function deleteCard() {
   if (!editingCard) return;
   const usedBy = state.expenses.filter(e => e.cardId === editingCard.id).length;
   if (usedBy > 0) {
-    if (!confirm(`Bu kartla ${usedBy} harcama var. Silersen onlar da silinecek. Devam?`)) return;
+    if (!confirm(`Bu yöntemle ${usedBy} harcama var. Silersen onlar da silinecek. Devam?`)) return;
     state.expenses = state.expenses.filter(e => e.cardId !== editingCard.id);
-  } else { if (!confirm('Bu kartı silmek istiyor musun?')) return; }
+  } else { if (!confirm('Bu ödeme yöntemini silmek istiyor musun?')) return; }
   state.payments = state.payments.filter(p => p.cardId !== editingCard.id);
   state.cards = state.cards.filter(c => c.id !== editingCard.id);
   await saveState();
