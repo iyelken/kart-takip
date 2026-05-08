@@ -716,7 +716,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
             <select class="form-select" id="catMonthSelect" style="flex:1; min-width:140px; padding:10px 12px; font-size:13px;"></select>
             <div style="display:flex; background:var(--bg-2); border-radius:10px; padding:3px; gap:2px;">
               <button class="cat-view-btn active" data-view="spending" style="padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600;">💸 Harcanan</button>
-              <button class="cat-view-btn" data-view="payment" style="padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600;">💳 Ödenen</button>
+              <button class="cat-view-btn" data-view="payment" style="padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600;">💳 Ödenecek</button>
             </div>
           </div>
           <div id="catViewExplain" style="font-size:11px; color:var(--text-dim); margin-bottom:12px; line-height:1.5;"></div>
@@ -732,7 +732,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
           <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
             <div style="display:flex; background:var(--bg-2); border-radius:10px; padding:3px; gap:2px;">
               <button class="trend-view-btn active" data-view="spending" style="padding:6px 10px; border-radius:8px; font-size:11px; font-weight:600;">💸 Harcama</button>
-              <button class="trend-view-btn" data-view="payment" style="padding:6px 10px; border-radius:8px; font-size:11px; font-weight:600;">💳 Ödeme</button>
+              <button class="trend-view-btn" data-view="payment" style="padding:6px 10px; border-radius:8px; font-size:11px; font-weight:600;">💳 Ödenecek</button>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
@@ -2368,7 +2368,7 @@ function renderCategoryBars() {
     if (catViewMode === 'spending') {
       explainEl.innerHTML = `📅 <strong>${monthLabel}</strong> içinde yapılan harcamalar. Taksitli olsa bile harcama tarihi bu aysa tam tutar gösterilir. <em>"Bu ay neye odaklandım?"</em>`;
     } else {
-      explainEl.innerHTML = `💳 <strong>${monthLabel}</strong> ayında cebinizden çıkan/çıkacak tutar. Taksitler aylara dağıtılır. <em>"Bu ay ne kadar ödüyorum?"</em>`;
+      explainEl.innerHTML = `💳 <strong>${monthLabel}</strong> ayında cebinizden çıkacak/çıkan tutar. Taksitler aylara dağıtılır. <em>"Bu ay ne kadar ödüyorum?"</em>`;
     }
   }
   
@@ -2478,6 +2478,7 @@ function renderCategoryDetailContent(detailExpenses, viewMode) {
   }
   
   const TYPE_ICONS = { credit: '💳', debit: '💰', cash: '💵' };
+  const today = new Date();
   
   let html = `<div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; font-weight:600;">${detailExpenses.length} işlem</div>`;
   
@@ -2490,13 +2491,47 @@ function renderCategoryDetailContent(detailExpenses, viewMode) {
     
     let amountDisplay = formatCurrency(item.amountInMonth);
     let taksitInfo = '';
+    let statusInfo = '';
+    let amountColor = '';
     
     if (!item.isFullAmount && item.taksitNo) {
-      // Taksit bilgisi
+      // Taksit bilgisi rozeti
       taksitInfo = `<span style="color:var(--accent); font-size:10px; font-weight:600; margin-left:6px; padding:2px 6px; background:rgba(245,158,11,0.15); border-radius:6px;">${item.taksitNo}/${item.totalTaksit}</span>`;
     } else if (e.taksit > 1 && viewMode === 'spending') {
-      // Harcama bakışında taksitliyse not düş
       taksitInfo = `<span style="color:var(--text-mute); font-size:10px; margin-left:6px;">${e.taksit} taksitli</span>`;
+    }
+    
+    // Ödendi/Ödenecek durumu (sadece taksit/kredi kartı için, ödenecek bakışında)
+    if (viewMode === 'payment' && card && card.type === 'credit') {
+      // Bu taksit ay'ı için ödenmiş mi?
+      const targetMonth = item.isFullAmount ? getExpenseMonth(e) : 
+        (item.taksitNo ? getPaymentSchedule(e).find(s => s.taksitNo === item.taksitNo)?.month : null);
+      
+      if (targetMonth) {
+        const paid = isPaymentMade(e.cardId, targetMonth);
+        if (paid) {
+          // Ödendi
+          const paidDate = new Date(paid.date);
+          const dayMonth = paidDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).replace('.', '');
+          statusInfo = `<div style="font-size:10px; color:var(--success); margin-top:2px; font-weight:600;">✓ ${dayMonth} ödendi</div>`;
+          amountColor = 'color: var(--success);';
+        } else {
+          // Ödenecek
+          const dueDate = getDueDate(card, targetMonth);
+          const dayMonth = dueDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).replace('.', '');
+          const isOverdue = dueDate < today;
+          if (isOverdue) {
+            statusInfo = `<div style="font-size:10px; color:var(--danger); margin-top:2px; font-weight:600;">⚠️ ${dayMonth} gecikti</div>`;
+          } else {
+            statusInfo = `<div style="font-size:10px; color:var(--warning); margin-top:2px; font-weight:600;">⏳ ${dayMonth} ödenecek</div>`;
+          }
+        }
+      }
+    } else if (viewMode === 'payment' && card && (card.type === 'debit' || card.type === 'cash')) {
+      // Nakit/debit harcama - anında ödendi
+      const dayMonth = new Date(e.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).replace('.', '');
+      statusInfo = `<div style="font-size:10px; color:var(--success); margin-top:2px; font-weight:600;">✓ ${dayMonth} ödendi</div>`;
+      amountColor = 'color: var(--success);';
     }
     
     html += `
@@ -2505,7 +2540,10 @@ function renderCategoryDetailContent(detailExpenses, viewMode) {
           <div style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${desc}${taksitInfo}</div>
           <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${formatDate(e.date)} • ${cardIcon} ${cardName}</div>
         </div>
-        <div style="font-family:'JetBrains Mono',monospace; font-weight:600; font-size:13px; text-align:right; white-space:nowrap;">${amountDisplay}</div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-family:'JetBrains Mono',monospace; font-weight:600; font-size:13px; white-space:nowrap; ${amountColor}">${amountDisplay}</div>
+          ${statusInfo}
+        </div>
       </div>`;
   });
   
