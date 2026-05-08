@@ -264,6 +264,17 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .cat-bar { height: 6px; background: var(--bg-2); border-radius: 3px; overflow: hidden; }
 .cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
 
+.cat-item-wrapper { transition: opacity 0.2s; }
+.cat-item-clickable { transition: opacity 0.15s; border-radius: 8px; }
+.cat-item-clickable:hover { opacity: 0.85; }
+.cat-item-clickable:active { opacity: 0.6; }
+.cat-arrow { transition: transform 0.2s ease; }
+.cat-detail { animation: slideDown 0.25s ease; }
+@keyframes slideDown { 
+  from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+  to { opacity: 1; max-height: 800px; }
+}
+
 .cat-view-btn, .trend-view-btn, .budget-mode-btn {
   background: transparent;
   color: var(--text-dim);
@@ -2405,9 +2416,121 @@ function renderCategoryBars() {
   
   sorted.forEach((item, idx) => {
     const pct = (item.total / grandTotal) * 100;
-    list.innerHTML += `<div><div class="cat-row"><span class="cat-name">${item.cat.icon} ${item.cat.name}</span><span class="cat-amount">${formatCurrency(item.total)} • ${pct.toFixed(0)}%</span></div><div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%; background:${colors[idx % colors.length]}"></div></div></div>`;
+    const catId = item.cat.id;
+    const detailId = `cat-detail-${targetMonth}-${catId}`;
+    
+    // O kategoriye ait detayları topla
+    let detailExpenses = [];
+    if (catViewMode === 'spending') {
+      // Harcama bakışı: o ayda yapılan harcamalar
+      detailExpenses = state.expenses
+        .filter(e => e.categoryId === catId && getExpenseMonth(e) === targetMonth)
+        .map(e => ({ expense: e, amountInMonth: e.amount, isFullAmount: true }))
+        .sort((a, b) => new Date(b.expense.date) - new Date(a.expense.date));
+    } else {
+      // Ödeme bakışı: o ayda ödenecek/ödenen tutarlar (taksitler dahil)
+      state.expenses.forEach(e => {
+        if (e.categoryId !== catId) return;
+        const schedule = getPaymentSchedule(e);
+        const matchingSchedule = schedule.find(s => s.month === targetMonth);
+        if (matchingSchedule) {
+          detailExpenses.push({
+            expense: e,
+            amountInMonth: matchingSchedule.amount,
+            taksitNo: matchingSchedule.taksitNo,
+            totalTaksit: matchingSchedule.totalTaksit,
+            isFullAmount: false
+          });
+        }
+        // Nakit/debit harcamalar (anında ödenir, o aya direkt yansır)
+        const card = state.cards.find(c => c.id === e.cardId);
+        if (card && (card.type === 'debit' || card.type === 'cash') && getExpenseMonth(e) === targetMonth) {
+          detailExpenses.push({
+            expense: e,
+            amountInMonth: e.amount,
+            isFullAmount: true
+          });
+        }
+      });
+      detailExpenses.sort((a, b) => new Date(b.expense.date) - new Date(a.expense.date));
+    }
+    
+    // Kategori başlık satırı (tıklanabilir)
+    list.innerHTML += `
+      <div class="cat-item-wrapper">
+        <div class="cat-item-clickable" onclick="toggleCatDetail('${detailId}')" style="cursor:pointer; padding:6px 0; user-select:none;">
+          <div class="cat-row">
+            <span class="cat-name">${item.cat.icon} ${item.cat.name} <span class="cat-arrow" id="arrow-${detailId}" style="font-size:10px; color:var(--text-mute); margin-left:4px; transition:transform 0.2s; display:inline-block;">▶</span></span>
+            <span class="cat-amount">${formatCurrency(item.total)} • ${pct.toFixed(0)}%</span>
+          </div>
+          <div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%; background:${colors[idx % colors.length]}"></div></div>
+        </div>
+        <div class="cat-detail" id="${detailId}" style="display:none; padding:12px; background:var(--bg-2); border-radius:10px; margin-top:8px; margin-bottom:4px;">
+          ${renderCategoryDetailContent(detailExpenses, catViewMode)}
+        </div>
+      </div>`;
   });
 }
+
+function renderCategoryDetailContent(detailExpenses, viewMode) {
+  if (detailExpenses.length === 0) {
+    return '<div style="text-align:center; color:var(--text-mute); font-size:12px; padding:8px;">Detay yok</div>';
+  }
+  
+  const TYPE_ICONS = { credit: '💳', debit: '💰', cash: '💵' };
+  
+  let html = `<div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; font-weight:600;">${detailExpenses.length} işlem</div>`;
+  
+  detailExpenses.forEach(item => {
+    const e = item.expense;
+    const card = state.cards.find(c => c.id === e.cardId);
+    const cardIcon = card ? (TYPE_ICONS[card.type || 'credit']) : '💳';
+    const cardName = card ? card.name : '?';
+    const desc = e.desc || 'Harcama';
+    
+    let amountDisplay = formatCurrency(item.amountInMonth);
+    let taksitInfo = '';
+    
+    if (!item.isFullAmount && item.taksitNo) {
+      // Taksit bilgisi
+      taksitInfo = `<span style="color:var(--accent); font-size:10px; font-weight:600; margin-left:6px; padding:2px 6px; background:rgba(245,158,11,0.15); border-radius:6px;">${item.taksitNo}/${item.totalTaksit}</span>`;
+    } else if (e.taksit > 1 && viewMode === 'spending') {
+      // Harcama bakışında taksitliyse not düş
+      taksitInfo = `<span style="color:var(--text-mute); font-size:10px; margin-left:6px;">${e.taksit} taksitli</span>`;
+    }
+    
+    html += `
+      <div onclick="closeAndEditExpense('${e.id}')" style="display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--border); align-items:center; cursor:pointer; transition:opacity 0.15s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${desc}${taksitInfo}</div>
+          <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">${formatDate(e.date)} • ${cardIcon} ${cardName}</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace; font-weight:600; font-size:13px; text-align:right; white-space:nowrap;">${amountDisplay}</div>
+      </div>`;
+  });
+  
+  return html;
+}
+
+function toggleCatDetail(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById('arrow-' + id);
+  if (!el) return;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    if (arrow) arrow.style.transform = 'rotate(90deg)';
+  } else {
+    el.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  }
+}
+window.toggleCatDetail = toggleCatDetail;
+
+function closeAndEditExpense(id) {
+  // Akordiyon kapatmadan direkt harcamayı düzenle
+  editExpense(id);
+}
+window.closeAndEditExpense = closeAndEditExpense;
 
 let trendChart = null;
 let trendViewMode = 'spending';
