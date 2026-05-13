@@ -143,8 +143,8 @@ input:focus, select:focus, textarea:focus { outline: none; }
 .net-label { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 .net-amount { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 700; letter-spacing: -0.02em; margin: 4px 0; }
 .net-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.2); position: relative; }
-.net-row-label { font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.net-row-value { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; margin-top: 2px; }
+.net-row-label { font-size: 10px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.net-row-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* === STAT CARDS === */
 .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -659,10 +659,14 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <div class="net-status">
         <div class="net-label">💎 Net Varlık</div>
         <div class="net-amount" id="netTotal">₺0</div>
-        <div class="net-rows">
+        <div class="net-rows" style="grid-template-columns: 1fr 1fr 1fr;">
           <div>
             <div class="net-row-label">Bu Ay Ödenecek</div>
             <div class="net-row-value" id="netDebt">₺0</div>
+          </div>
+          <div>
+            <div class="net-row-label">Toplam Borç</div>
+            <div class="net-row-value" id="netTotalDebt">₺0</div>
           </div>
           <div>
             <div class="net-row-label">Ay Sonu Tahmin</div>
@@ -1889,6 +1893,21 @@ function renderHome() {
   }
   document.getElementById('netDebt').textContent = formatCurrency(totalDebtThisMonth);
   document.getElementById('netProjected').textContent = formatCurrency(totalBalance - totalDebtThisMonth);
+  
+  // Toplam Borç = Tüm ödenmemiş kredi kartı taksitleri (geçmiş + gelecek)
+  let totalDebt = 0;
+  state.cards.forEach(card => {
+    if (card.type && card.type !== 'credit') return; // Sadece kredi kartları
+    // Geçmiş 12 ay + gelecek 36 ay tarama (uzun taksitler için)
+    for (let offset = -12; offset <= 36; offset++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+      const monthKey = getMonthKey(d);
+      const payment = calculateCardPayment(card.id, monthKey);
+      const paid = isPaymentMade(card.id, monthKey);
+      if (payment > 0 && !paid) totalDebt += payment;
+    }
+  });
+  document.getElementById('netTotalDebt').textContent = formatCurrency(totalDebt);
 
   // Harcama
   let monthSpending = 0, monthCount = 0;
