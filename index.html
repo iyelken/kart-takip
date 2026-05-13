@@ -947,6 +947,51 @@ input:focus, select:focus, textarea:focus { outline: none; }
         <div class="section-header"><div class="section-title">📅 Diğer Görünümler</div></div>
         <div class="section-body">
           <button class="btn btn-secondary btn-block" onclick="goToPage('calendar')" style="margin-bottom:8px;">📅 Aylık Ödeme Planı</button>
+          <button class="btn btn-secondary btn-block" onclick="goToPage('leaks')" style="margin-bottom:8px;">🔥 Para Sızıntıları</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARA SIZINTILARI -->
+    <div class="page" id="page-leaks">
+      <h1 class="page-title">Para Sızıntıları</h1>
+      <p class="page-subtitle">Tekrar eden harcamalarınızı görün</p>
+
+      <div class="chip-row" id="leakPeriodChips">
+        <div class="chip" data-period="3">Son 3 Ay</div>
+        <div class="chip active" data-period="6">Son 6 Ay</div>
+        <div class="chip" data-period="12">Son 12 Ay</div>
+        <div class="chip" data-period="all">Tümü</div>
+      </div>
+
+      <div class="chip-row" id="leakCatChips"></div>
+
+      <div class="net-status" style="background: linear-gradient(135deg, var(--warning), var(--accent)); margin-bottom:14px;">
+        <div class="net-label">🔥 Sabit/Tekrarlı Harcamalarınız</div>
+        <div class="net-amount" id="leakTotal">₺0</div>
+        <div class="net-rows" style="grid-template-columns: 1fr 1fr;">
+          <div>
+            <div class="net-row-label">Aylık Ortalama</div>
+            <div class="net-row-value" id="leakMonthlyAvg">₺0</div>
+          </div>
+          <div>
+            <div class="net-row-label">Yıllık Tahmin</div>
+            <div class="net-row-value" id="leakYearlyProj">₺0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title" id="leakListTitle">Tekrarlayan Harcamalar</div></div>
+        <div class="section-body no-pad">
+          <div id="leakList"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title">💡 Tavsiyeler</div></div>
+        <div class="section-body">
+          <div id="leakTips"></div>
         </div>
       </div>
     </div>
@@ -1058,7 +1103,11 @@ input:focus, select:focus, textarea:focus { outline: none; }
     <h2 class="modal-title" id="expenseModalTitle">Yeni Harcama</h2>
     <p class="modal-subtitle">İşlem detaylarını gir</p>
     <div class="form-group"><label class="form-label">Tarih</label><input type="date" class="form-input" id="exp-date"></div>
-    <div class="form-group"><label class="form-label">Açıklama</label><input type="text" class="form-input" id="exp-desc" placeholder="Örn: Migros alışveriş"></div>
+    <div class="form-group">
+      <label class="form-label">Açıklama</label>
+      <input type="text" class="form-input" id="exp-desc" placeholder="Örn: Migros alışveriş" list="exp-desc-suggestions" autocomplete="off">
+      <datalist id="exp-desc-suggestions"></datalist>
+    </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Tutar (₺)</label><input type="number" step="0.01" class="form-input" id="exp-amount" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label">Taksit</label><input type="number" min="1" max="36" class="form-input" id="exp-taksit" value="1"></div>
@@ -1858,6 +1907,7 @@ function renderAll() {
   renderExpenses();
   renderCalendar();
   renderForecast();
+  renderLeaks();
   renderCardsList();
   renderCategoriesList();
   renderIncomeSourcesList();
@@ -3681,6 +3731,258 @@ function renderWarnings(projection, balance, thisDebt, avgSpending, avgIncome) {
   });
 }
 
+// === PARA SIZINTILARI / LEAKS ===
+let leakPeriod = 6; // ay sayısı, 'all' veya rakam
+let leakCatFilter = 'all'; // 'all' veya category ID
+
+// Açıklamayı normalize et (büyük/küçük harf, fazla boşluk kaldır)
+function normalizeDesc(desc) {
+  if (!desc) return '';
+  return desc.trim().toLowerCase()
+    .replace(/\s+/g, ' ') // çoklu boşluğu tek boşluğa
+    .replace(/[.,;:!?'"]/g, ''); // noktalama kaldır
+}
+
+// Tekrar eden harcamaları grupla (description + categoryId bazlı)
+function getRecurringExpenses() {
+  const today = new Date();
+  
+  // Periyod sınırı
+  let cutoffDate = null;
+  if (leakPeriod !== 'all') {
+    cutoffDate = new Date(today.getFullYear(), today.getMonth() - leakPeriod, 1);
+  }
+  
+  // Tüm harcamaları filtrele (periyod ve açıklaması olanlar)
+  const validExpenses = state.expenses.filter(e => {
+    if (!e.desc || e.desc.trim() === '') return false;
+    if (cutoffDate && new Date(e.date) < cutoffDate) return false;
+    return true;
+  });
+  
+  // Grupla: anahtar = "normalizedDesc::categoryId"
+  const groups = new Map();
+  validExpenses.forEach(e => {
+    const normDesc = normalizeDesc(e.desc);
+    if (!normDesc) return;
+    const key = normDesc + '::' + e.categoryId;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        normDesc,
+        categoryId: e.categoryId,
+        displayName: e.desc.trim(), // İlk gördüğümüz orijinal yazımı kullan
+        expenses: [],
+        totalAmount: 0,
+        firstDate: e.date,
+        lastDate: e.date
+      });
+    }
+    const g = groups.get(key);
+    g.expenses.push(e);
+    g.totalAmount += e.amount;
+    if (new Date(e.date) < new Date(g.firstDate)) g.firstDate = e.date;
+    if (new Date(e.date) > new Date(g.lastDate)) g.lastDate = e.date;
+  });
+  
+  // Sadece 2+ kez geçen grupları al (tekrarlayan)
+  const recurring = [];
+  groups.forEach(g => {
+    if (g.expenses.length >= 2) {
+      // Kaç ay üzerine yayılmış?
+      const firstD = new Date(g.firstDate);
+      const lastD = new Date(g.lastDate);
+      const monthsSpan = Math.max(1, (lastD.getFullYear() - firstD.getFullYear()) * 12 + (lastD.getMonth() - firstD.getMonth()) + 1);
+      g.monthsSpan = monthsSpan;
+      g.monthlyAvg = g.totalAmount / monthsSpan;
+      g.yearlyProj = g.monthlyAvg * 12;
+      g.count = g.expenses.length;
+      recurring.push(g);
+    }
+  });
+  
+  // Toplam tutara göre sırala (en çok harcanan üstte)
+  recurring.sort((a, b) => b.totalAmount - a.totalAmount);
+  
+  return recurring;
+}
+
+function renderLeaks() {
+  // Period chip event'i
+  document.querySelectorAll('#leakPeriodChips .chip').forEach(chip => {
+    if (chip.dataset.bound) return;
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#leakPeriodChips .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const p = chip.dataset.period;
+      leakPeriod = p === 'all' ? 'all' : parseInt(p);
+      renderLeaks();
+    });
+    chip.dataset.bound = '1';
+  });
+  
+  // Kategori filtre chip'leri (sadece sızıntılarda kullanılan kategoriler)
+  const allRecurring = getRecurringExpenses();
+  const usedCatIds = new Set(allRecurring.map(r => r.categoryId));
+  
+  const catContainer = document.getElementById('leakCatChips');
+  let catHtml = `<div class="chip ${leakCatFilter === 'all' ? 'active' : ''}" data-cat="all">🏷️ Tümü</div>`;
+  state.categories.forEach(cat => {
+    if (!usedCatIds.has(cat.id)) return;
+    catHtml += `<div class="chip ${leakCatFilter === cat.id ? 'active' : ''}" data-cat="${cat.id}">${cat.icon} ${cat.name}</div>`;
+  });
+  catContainer.innerHTML = catHtml;
+  catContainer.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      leakCatFilter = chip.dataset.cat;
+      renderLeaks();
+    });
+  });
+  
+  // Filtrelenmiş tekrarlayanlar
+  let filtered = allRecurring;
+  if (leakCatFilter !== 'all') {
+    filtered = filtered.filter(r => r.categoryId === leakCatFilter);
+  }
+  
+  // Toplamlar
+  const totalAmount = filtered.reduce((s, r) => s + r.totalAmount, 0);
+  const totalMonthlyAvg = filtered.reduce((s, r) => s + r.monthlyAvg, 0);
+  const totalYearlyProj = totalMonthlyAvg * 12;
+  
+  document.getElementById('leakTotal').textContent = formatCurrency(totalAmount);
+  document.getElementById('leakMonthlyAvg').textContent = formatCurrency(totalMonthlyAvg);
+  document.getElementById('leakYearlyProj').textContent = formatCurrency(totalYearlyProj);
+  
+  // Başlık
+  let periodLabel = leakPeriod === 'all' ? 'Tüm zamanlar' : `Son ${leakPeriod} ay`;
+  document.getElementById('leakListTitle').textContent = `${filtered.length} Tekrarlayan Harcama (${periodLabel})`;
+  
+  // Liste
+  const list = document.getElementById('leakList');
+  list.innerHTML = '';
+  
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty" style="padding:30px 20px;"><div class="icon">🔍</div><div class="text">Bu kriterlere uyan tekrar eden harcama yok.<br>Bir açıklama 2+ ay tekrar ederse burada görünür.</div></div>`;
+    renderLeakTips([]);
+    return;
+  }
+  
+  filtered.forEach((g, idx) => {
+    const cat = state.categories.find(c => c.id === g.categoryId);
+    const detailId = `leak-detail-${idx}`;
+    const lastDate = new Date(g.lastDate);
+    const today = new Date();
+    const daysSinceLast = Math.ceil((today - lastDate) / (1000 * 60 * 60 * 24));
+    
+    list.innerHTML += `
+      <div class="history-item" style="border-top:1px solid var(--border); flex-direction:column; align-items:stretch; padding:0;">
+        <div onclick="toggleLeakDetail('${detailId}')" style="display:flex; gap:12px; padding:14px 18px; align-items:center; cursor:pointer; user-select:none;">
+          <div class="history-icon" style="background:rgba(245,158,11,0.15); color:var(--accent);">${cat ? cat.icon : '💸'}</div>
+          <div class="history-info">
+            <div class="title" style="display:flex; align-items:center; gap:6px;">
+              ${g.displayName}
+              <span style="font-size:10px; color:var(--text-mute); font-weight:400;">(${g.count} işlem)</span>
+              <span id="arrow-${detailId}" style="font-size:10px; color:var(--text-mute); transition:transform 0.2s;">▶</span>
+            </div>
+            <div class="meta">
+              ${cat ? cat.name : '?'} • Aylık ort: ${formatCurrency(g.monthlyAvg)} • Son: ${daysSinceLast} gün önce
+            </div>
+          </div>
+          <div class="history-amount" style="color:var(--accent); text-align:right;">
+            ${formatCurrency(g.totalAmount)}
+            <div style="font-size:10px; color:var(--text-dim); font-weight:500; margin-top:2px;">Yıllık: ${formatCurrency(g.yearlyProj)}</div>
+          </div>
+        </div>
+        <div id="${detailId}" style="display:none; background:var(--bg-2); padding:12px 18px;">
+          <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; font-weight:600; margin-bottom:8px;">İşlem Geçmişi</div>
+          ${g.expenses.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => {
+            const card = state.cards.find(c => c.id === e.cardId);
+            const TYPE_ICONS = { credit: '💳', debit: '💰', cash: '💵' };
+            const cardIcon = card ? (TYPE_ICONS[card.type || 'credit']) : '💳';
+            return `<div onclick="event.stopPropagation(); editExpense('${e.id}')" style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border); font-size:12px; cursor:pointer;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+              <div>
+                <div style="color:var(--text);">${e.desc || cat.name}</div>
+                <div style="font-size:10px; color:var(--text-dim); margin-top:2px;">${formatDate(e.date)} • ${cardIcon} ${card ? card.name : '?'}${e.taksit > 1 ? ' • ' + e.taksit + ' taksit' : ''}</div>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace; font-weight:600;">${formatCurrency(e.amount)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  });
+  
+  renderLeakTips(filtered);
+}
+
+function toggleLeakDetail(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById('arrow-' + id);
+  if (!el) return;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    if (arrow) arrow.style.transform = 'rotate(90deg)';
+  } else {
+    el.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  }
+}
+window.toggleLeakDetail = toggleLeakDetail;
+
+function renderLeakTips(recurring) {
+  const tipsContainer = document.getElementById('leakTips');
+  tipsContainer.innerHTML = '';
+  
+  if (recurring.length === 0) {
+    tipsContainer.innerHTML = '<div class="warning-card info"><div class="warning-icon">💡</div><div class="warning-content"><div class="warning-title">Henüz tekrarlayan harcama yok</div><div class="warning-text">Harcamalarınızda açıklama (örn: "Trendyol", "Steam") kullanırsanız sistem aynı açıklamalarla tekrar eden işlemleri otomatik gruplandırır.</div></div></div>';
+    return;
+  }
+  
+  // En büyük 3 sızıntı için tavsiye
+  const top3 = recurring.slice(0, 3);
+  const tips = [];
+  
+  top3.forEach(g => {
+    const cat = state.categories.find(c => c.id === g.categoryId);
+    if (g.yearlyProj >= 12000) {
+      tips.push({
+        type: 'danger',
+        icon: '🚨',
+        title: `${g.displayName}`,
+        text: `Yıllık ${formatCurrency(g.yearlyProj)} para gidiyor! Yarısını azaltsan ${formatCurrency(g.yearlyProj / 2)} tasarruf edersin.`
+      });
+    } else if (g.yearlyProj >= 5000) {
+      tips.push({
+        type: '',
+        icon: '⚠️',
+        title: `${g.displayName}`,
+        text: `Yıllık ${formatCurrency(g.yearlyProj)}. ${cat ? cat.name + ' kategorisinde' : ''} en büyük sızıntılardan biri.`
+      });
+    } else {
+      tips.push({
+        type: 'info',
+        icon: '💡',
+        title: `${g.displayName}`,
+        text: `Aylık ortalama ${formatCurrency(g.monthlyAvg)} harcanıyor. Düzenli kontrol et.`
+      });
+    }
+  });
+  
+  // Genel toplam tavsiyesi
+  const totalYearly = recurring.reduce((s, r) => s + r.yearlyProj, 0);
+  if (totalYearly > 0) {
+    tips.unshift({
+      type: 'info',
+      icon: '📊',
+      title: 'Yıllık Toplam Sızıntı',
+      text: `Bu tekrarlayan harcamalardan yıllık ${formatCurrency(totalYearly)} çıkıyor. %20'sini azaltsan ${formatCurrency(totalYearly * 0.2)} tasarruf!`
+    });
+  }
+  
+  tips.forEach(t => {
+    tipsContainer.innerHTML += `<div class="warning-card ${t.type}"><div class="warning-icon">${t.icon}</div><div class="warning-content"><div class="warning-title">${t.title}</div><div class="warning-text">${t.text}</div></div></div>`;
+  });
+}
+
 function renderCardsList() {
   const list = document.getElementById('cardList');
   list.innerHTML = '';
@@ -3733,6 +4035,39 @@ function populateExpenseFormDropdowns() {
     return `<option value="${c.id}">${icon} ${c.name}</option>`;
   }).join('');
   document.getElementById('exp-category').innerHTML = state.categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  
+  // Kategori değiştiğinde açıklama önerilerini güncelle
+  const catSelect = document.getElementById('exp-category');
+  if (catSelect && !catSelect.dataset.bound) {
+    catSelect.addEventListener('change', updateExpenseDescSuggestions);
+    catSelect.dataset.bound = '1';
+  }
+  
+  updateExpenseDescSuggestions();
+}
+
+function updateExpenseDescSuggestions() {
+  const catId = document.getElementById('exp-category').value;
+  if (!catId) return;
+  
+  // O kategorideki açıklamaları topla (case-insensitive grupla)
+  const descMap = new Map(); // normalized -> {original, count}
+  state.expenses.forEach(e => {
+    if (e.categoryId !== catId || !e.desc || !e.desc.trim()) return;
+    const norm = normalizeDesc(e.desc);
+    if (!descMap.has(norm)) {
+      descMap.set(norm, { original: e.desc.trim(), count: 0 });
+    }
+    descMap.get(norm).count++;
+  });
+  
+  // Sıkça kullanılanları üstte tut
+  const sorted = [...descMap.values()].sort((a, b) => b.count - a.count);
+  
+  const datalist = document.getElementById('exp-desc-suggestions');
+  if (datalist) {
+    datalist.innerHTML = sorted.map(d => `<option value="${d.original}">`).join('');
+  }
 }
 
 function populateIncomeFormDropdowns() {
