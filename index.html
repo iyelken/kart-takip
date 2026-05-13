@@ -819,10 +819,7 @@ input:focus, select:focus, textarea:focus { outline: none; }
       <p class="page-subtitle">Tüm işlemlerin</p>
 
       <div class="chip-row" id="filterChips">
-        <div class="chip active" data-filter="thismonth">Bu Ay</div>
-        <div class="chip" data-filter="lastmonth">Geçen Ay</div>
-        <div class="chip" data-filter="taksit">Taksitli</div>
-        <div class="chip" data-filter="custom">📅 Tarih Seç</div>
+        <!-- Dinamik olarak doldurulacak: Geçen Ay - Bu Ay - Gelecek Ay - Taksitli - Tarih Seç -->
       </div>
 
       <div id="dateFilterPanel" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;">
@@ -2700,7 +2697,42 @@ function applyDateFilter() {
 }
 window.applyDateFilter = applyDateFilter;
 
+// Dinamik filtre buttonlarını oluştur (Geçen Ay - Bu Ay - Gelecek Ay - Taksitli - Tarih Seç)
+function renderFilterChips() {
+  const container = document.getElementById('filterChips');
+  if (!container) return;
+  
+  const today = new Date();
+  const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  const monthsShort = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const thisMonth = today;
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  
+  const buttons = [
+    { filter: 'lastmonth', label: monthsShort[lastMonth.getMonth()] },
+    { filter: 'thismonth', label: monthsShort[thisMonth.getMonth()] + ' (Bu Ay)' },
+    { filter: 'nextmonth', label: monthsShort[nextMonth.getMonth()] },
+    { filter: 'taksit', label: '🔁 Taksitli' },
+    { filter: 'custom', label: '📅 Tarih Seç' }
+  ];
+  
+  container.innerHTML = buttons.map(b => 
+    `<div class="chip ${currentFilter === b.filter ? 'active' : ''}" data-filter="${b.filter}">${b.label}</div>`
+  ).join('');
+  
+  // Event bind
+  container.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      currentFilter = chip.dataset.filter;
+      renderExpenses();
+    });
+  });
+}
+
 function renderExpenses() {
+  renderFilterChips();
   populateDateFilterDropdowns();
   renderCardFilters();
   
@@ -2711,103 +2743,222 @@ function renderExpenses() {
   
   const list = document.getElementById('expenseList');
   list.innerHTML = '';
-  let filtered = [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
   const today = new Date();
-  const thisMonthKey = getMonthKey(today);
-  const lastMonthKey = getMonthKey(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+  const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
   
+  // Hangi ay filtreleniyor (taksit ay-ay göstermek için)
+  let targetMonth = null; // YYYY-MM
   let filterTitle = '';
+  
   if (currentFilter === 'thismonth') {
-    filtered = filtered.filter(e => getExpenseMonth(e) === thisMonthKey);
-    filterTitle = today.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+    targetMonth = getMonthKey(today);
+    filterTitle = months[today.getMonth()] + ' ' + today.getFullYear();
   } else if (currentFilter === 'lastmonth') {
-    filtered = filtered.filter(e => getExpenseMonth(e) === lastMonthKey);
     const lm = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    filterTitle = lm.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-  } else if (currentFilter === 'taksit') {
-    filtered = filtered.filter(e => e.taksit > 1);
-    filterTitle = 'Taksitli işlemler';
+    targetMonth = getMonthKey(lm);
+    filterTitle = months[lm.getMonth()] + ' ' + lm.getFullYear();
+  } else if (currentFilter === 'nextmonth') {
+    const nm = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    targetMonth = getMonthKey(nm);
+    filterTitle = months[nm.getMonth()] + ' ' + nm.getFullYear();
   } else if (currentFilter === 'custom' && customFilterYear) {
     if (customFilterMonth === 'all') {
-      filtered = filtered.filter(e => new Date(e.date).getFullYear() === customFilterYear);
       filterTitle = customFilterYear + ' yılı';
+      // Tüm yıl: targetMonth yok, farklı mantık
     } else {
-      filtered = filtered.filter(e => {
-        const d = new Date(e.date);
-        return d.getFullYear() === customFilterYear && (d.getMonth() + 1) === customFilterMonth;
-      });
-      const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+      const m = String(customFilterMonth).padStart(2, '0');
+      targetMonth = customFilterYear + '-' + m;
       filterTitle = months[customFilterMonth - 1] + ' ' + customFilterYear;
     }
+  } else if (currentFilter === 'taksit') {
+    filterTitle = 'Taksitli işlemler (aktif)';
   }
   
+  // İşlemleri oluştur (her taksit ayrı bir satır olacak)
+  // entries = [{expense, displayDate, monthKey, taksitNo, totalTaksit, amountForRow, isFullAmount, paymentStatus}]
+  let entries = [];
+  
+  if (currentFilter === 'taksit') {
+    // Aktif taksitli işlemleri tüm taksitleriyle göster
+    const todayMonthKey = getMonthKey(today);
+    state.expenses.forEach(e => {
+      if (e.taksit <= 1) return;
+      const schedule = getPaymentSchedule(e);
+      if (schedule.length === 0) return;
+      // Sadece son taksiti bu ay veya gelecek olanlar (aktif)
+      const lastTaksitMonth = schedule[schedule.length - 1].month;
+      if (lastTaksitMonth < todayMonthKey) return;
+      
+      schedule.forEach(s => {
+        entries.push({
+          expense: e,
+          monthKey: s.month,
+          taksitNo: s.taksitNo,
+          totalTaksit: s.totalTaksit,
+          amountForRow: s.amount,
+          isFullAmount: false
+        });
+      });
+    });
+  } else if (currentFilter === 'custom' && customFilterYear && customFilterMonth === 'all') {
+    // Tüm yıl: o yılda herhangi bir taksit ödemesi olan tüm satırlar
+    state.expenses.forEach(e => {
+      const card = state.cards.find(c => c.id === e.cardId);
+      const isInstant = card && (card.type === 'debit' || card.type === 'cash');
+      
+      if (isInstant) {
+        // Nakit/debit: harcama tarihi o yılda mı?
+        if (new Date(e.date).getFullYear() === customFilterYear) {
+          entries.push({
+            expense: e,
+            monthKey: getExpenseMonth(e),
+            amountForRow: e.amount,
+            isFullAmount: true
+          });
+        }
+      } else {
+        // Kredi: taksitlerinden o yılda olanları ekle
+        const schedule = getPaymentSchedule(e);
+        schedule.forEach(s => {
+          const y = parseInt(s.month.split('-')[0]);
+          if (y === customFilterYear) {
+            entries.push({
+              expense: e,
+              monthKey: s.month,
+              taksitNo: s.taksitNo,
+              totalTaksit: s.totalTaksit,
+              amountForRow: s.amount,
+              isFullAmount: e.taksit === 1
+            });
+          }
+        });
+      }
+    });
+  } else if (targetMonth) {
+    // Belirli bir ay seçili: o ay taksiti/harcaması olan her satırı ekle
+    state.expenses.forEach(e => {
+      const card = state.cards.find(c => c.id === e.cardId);
+      const isInstant = card && (card.type === 'debit' || card.type === 'cash');
+      
+      if (isInstant) {
+        // Nakit/debit: harcama tarihi o ayda mı?
+        if (getExpenseMonth(e) === targetMonth) {
+          entries.push({
+            expense: e,
+            monthKey: targetMonth,
+            amountForRow: e.amount,
+            isFullAmount: true
+          });
+        }
+      } else {
+        // Kredi: o ay taksiti var mı?
+        const schedule = getPaymentSchedule(e);
+        const matching = schedule.find(s => s.month === targetMonth);
+        if (matching) {
+          entries.push({
+            expense: e,
+            monthKey: targetMonth,
+            taksitNo: matching.taksitNo,
+            totalTaksit: matching.totalTaksit,
+            amountForRow: matching.amount,
+            isFullAmount: e.taksit === 1
+          });
+        }
+      }
+    });
+  }
+  
+  // Kart filtresi uygula
   if (currentCardFilter !== 'all') {
-    filtered = filtered.filter(e => e.cardId === currentCardFilter);
+    entries = entries.filter(en => en.expense.cardId === currentCardFilter);
     const card = state.cards.find(c => c.id === currentCardFilter);
     if (card) filterTitle = (filterTitle ? filterTitle + ' • ' : '') + card.name;
   }
   
-  if (filtered.length === 0) { 
-    list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Bu kriterlere uyan harcama yok</div></div>'; 
+  // Sıralama: önce harcama tarihine göre yeni→eski
+  entries.sort((a, b) => {
+    const da = new Date(a.expense.date);
+    const db = new Date(b.expense.date);
+    return db - da;
+  });
+  
+  if (entries.length === 0) { 
+    list.innerHTML = '<div class="empty"><div class="icon">📋</div><div class="text">Bu kriterlere uyan işlem yok</div></div>'; 
     return; 
   }
   
-  // Toplam tutar
-  const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+  // Toplam tutar (o ayın gerçek yükü)
+  const total = entries.reduce((sum, en) => sum + en.amountForRow, 0);
   list.innerHTML += `<div style="padding: 14px 18px; background: var(--bg-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-    <span style="font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">${filterTitle} (${filtered.length} işlem)</span>
+    <span style="font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">${filterTitle} (${entries.length} satır)</span>
     <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent); font-size: 15px;">${formatCurrency(total)}</span>
   </div>`;
   
-  filtered.forEach(e => {
+  const TYPE_ICONS = { credit: '💳', debit: '💰', cash: '💵' };
+  
+  entries.forEach(en => {
+    const e = en.expense;
     const card = state.cards.find(c => c.id === e.cardId);
     const cat = state.categories.find(c => c.id === e.categoryId);
+    const cardIcon = card ? (TYPE_ICONS[card.type || 'credit']) : '💳';
+    const cardName = card ? card.name : '?';
+    const desc = e.desc || (cat ? cat.name : 'Harcama');
     
-    // Taksit bilgisi (varsa)
-    let taksitInfo = '';
-    if (e.taksit > 1) {
-      const today = new Date();
-      const currentMonthKey = getMonthKey(today);
-      const schedule = getPaymentSchedule(e);
-      
-      // Şu anda kaçıncı taksitteyiz?
-      let currentTaksitNo = 0;
-      schedule.forEach(s => {
-        if (s.month <= currentMonthKey) currentTaksitNo = s.taksitNo;
-      });
-      
-      const lastMonth = schedule[schedule.length - 1].month;
-      const isCompleted = lastMonth < currentMonthKey;
-      const isLastThisMonth = lastMonth === currentMonthKey;
-      
-      let badgeClass = '';
-      let badgeText = '';
-      
-      if (isCompleted) {
-        badgeClass = 'completed';
-        badgeText = `✓ ${e.taksit}/${e.taksit}`;
-      } else if (isLastThisMonth) {
-        badgeClass = 'last';
-        badgeText = `🎉 Son! ${currentTaksitNo}/${e.taksit}`;
-      } else {
-        badgeText = `${currentTaksitNo}/${e.taksit} taksit`;
-      }
-      
-      taksitInfo = `<span class="taksit-badge ${badgeClass}">${badgeText}</span>`;
+    // Taksit rozet
+    let taksitBadge = '';
+    if (en.taksitNo && en.totalTaksit > 1) {
+      const isLast = en.taksitNo === en.totalTaksit;
+      const badgeStyle = isLast 
+        ? 'background:rgba(52,211,153,0.2); color:var(--success);'
+        : 'background:rgba(245,158,11,0.15); color:var(--accent);';
+      const label = isLast ? `🎉 ${en.taksitNo}/${en.totalTaksit}` : `${en.taksitNo}/${en.totalTaksit}`;
+      taksitBadge = `<span style="${badgeStyle} font-size:10px; font-weight:600; padding:2px 6px; border-radius:6px; margin-left:6px; font-family:'JetBrains Mono',monospace;">${label}</span>`;
     }
     
-    list.innerHTML += `<div class="expense-item" onclick="editExpense('${e.id}')"><div class="expense-icon">${cat ? cat.icon : '💸'}</div><div class="expense-info"><div class="desc">${e.desc || (cat ? cat.name : 'Harcama')}</div><div class="meta">${formatDate(e.date)} • ${card ? card.name : '?'} • ${cat ? cat.name : '?'} ${taksitInfo}</div></div><div class="expense-amount">${formatCurrency(e.amount)}${e.taksit > 1 ? `<span class="taksit">Aylık ${formatCurrency(e.amount / e.taksit)}</span>` : ''}</div></div>`;
+    // Durum bilgisi (ödendi/ödenecek + tarih)
+    let statusInfo = '';
+    let amountColor = '';
+    
+    if (en.isFullAmount && card && (card.type === 'debit' || card.type === 'cash')) {
+      // Nakit/debit: anında ödendi
+      const d = new Date(e.date);
+      const dayMonth = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).replace('.', '');
+      statusInfo = `<div style="font-size:10px; color:var(--success); margin-top:2px; font-weight:600;">✓ ${dayMonth} ödendi</div>`;
+      amountColor = 'color: var(--success);';
+    } else if (card && card.type === 'credit' && en.monthKey) {
+      // Kredi: bu ay ödendi mi?
+      const paid = isPaymentMade(e.cardId, en.monthKey);
+      if (paid) {
+        const paidDate = new Date(paid.date);
+        const dayMonth = paidDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).replace('.', '');
+        statusInfo = `<div style="font-size:10px; color:var(--success); margin-top:2px; font-weight:600;">✓ ${dayMonth} ödendi</div>`;
+        amountColor = 'color: var(--success);';
+      } else {
+        const dueDate = getDueDate(card, en.monthKey);
+        const dayMonth = dueDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }).replace('.', '');
+        const isOverdue = dueDate < today;
+        if (isOverdue) {
+          statusInfo = `<div style="font-size:10px; color:var(--danger); margin-top:2px; font-weight:600;">⚠️ ${dayMonth} gecikti</div>`;
+        } else {
+          statusInfo = `<div style="font-size:10px; color:var(--warning); margin-top:2px; font-weight:600;">⏳ ${dayMonth} ödenecek</div>`;
+        }
+      }
+    }
+    
+    list.innerHTML += `
+      <div class="expense-item" onclick="editExpense('${e.id}')">
+        <div class="expense-icon">${cat ? cat.icon : '💸'}</div>
+        <div class="expense-info">
+          <div class="desc">${desc}${taksitBadge}</div>
+          <div class="meta">${formatDate(e.date)} • ${cardIcon} ${cardName} • ${cat ? cat.name : '?'}</div>
+        </div>
+        <div class="expense-amount" style="${amountColor}">
+          ${formatCurrency(en.amountForRow)}
+          ${statusInfo}
+        </div>
+      </div>`;
   });
 }
-
-document.querySelectorAll('#filterChips .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#filterChips .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    currentFilter = chip.dataset.filter;
-    renderExpenses();
-  });
-});
 
 function renderCalendar() {
   const selector = document.getElementById('monthSelector');
