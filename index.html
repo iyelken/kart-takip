@@ -1671,12 +1671,32 @@ function getFirstPaymentMonth(expense) {
   if (!card) return null;
   const date = new Date(expense.date);
   const expDay = date.getDate();
+  
+  // Önce ekstre ayını bul (harcamanın hangi ekstreye gireceği)
+  let statementYear = date.getFullYear();
+  let statementMonth = date.getMonth() + 1; // 1-12
   if (expDay > card.cutoff) {
-    const next = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-    return next.getFullYear() + '-' + String(next.getMonth() + 1).padStart(2, '0');
-  } else {
-    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    // Kesimden sonraki harcama, sonraki ekstreye girer
+    statementMonth++;
+    if (statementMonth > 12) {
+      statementMonth = 1;
+      statementYear++;
+    }
   }
+  
+  // Şimdi: bu ekstrenin gerçek ödeme ayı ne?
+  // Eğer kart.due < kart.cutoff ise, ödeme ekstreden sonraki aya geçer
+  let paymentYear = statementYear;
+  let paymentMonth = statementMonth;
+  if (card.due < card.cutoff) {
+    paymentMonth++;
+    if (paymentMonth > 12) {
+      paymentMonth = 1;
+      paymentYear++;
+    }
+  }
+  
+  return paymentYear + '-' + String(paymentMonth).padStart(2, '0');
 }
 
 // Bir harcamanın TÜM taksit dönemlerini döndürür: [{month: 'YYYY-MM', amount: ...}, ...]
@@ -1710,13 +1730,9 @@ function formatDate(d) { if (typeof d === 'string') d = new Date(d); return d.to
 function formatMonthYear(d) { return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }); }
 
 function getDueDate(card, monthYearStr) {
+  // monthYearStr artık doğrudan ödeme ayı (getFirstPaymentMonth düzeltildi)
   const [y, m] = monthYearStr.split('-').map(Number);
-  let dueMonth = m, dueYear = y;
-  if (card.due < card.cutoff) {
-    dueMonth = m + 1;
-    if (dueMonth > 12) { dueMonth = 1; dueYear++; }
-  }
-  return new Date(dueYear, dueMonth - 1, Math.min(card.due, new Date(dueYear, dueMonth, 0).getDate()));
+  return new Date(y, m - 1, Math.min(card.due, new Date(y, m, 0).getDate()));
 }
 
 // Bir kartın belirli ay için ödenecek tutarını hesapla (taksitleri dağıtarak)
